@@ -1,6 +1,5 @@
 rm -rf project_intern
 nvm install v10.15.3 
-git clone https://github.com/VarunSai19/project_intern.git
 sleep 3
 docker stop $(docker ps -aq) && docker rm $(docker ps -aq)
 sleep 3
