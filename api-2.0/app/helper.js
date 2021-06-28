@@ -4,7 +4,7 @@ var { Gateway, Wallets } = require('fabric-network');
 const path = require('path');
 const FabricCAServices = require('fabric-ca-client');
 const fs = require('fs');
-
+var SHA256 = require("crypto-js/sha256");
 const util = require('util');
 
 var user_hash_dict = {}
@@ -193,9 +193,17 @@ const Register = async (username,password,usertype) => {
         };
         return response
     }
-    var pass_hash = crypto.createHash('sha256').update(username+password).digest('hex')
+    var pass_hash = SHA256(username+password)
     user_hash_dict[username] = {"password_hash":pass_hash,"usertype":usertype}
+    console.log(pass_hash)
     console.log("Registration successful")
+    var response = {
+        success: true,
+        message: username + ' enrolled Successfully',
+        hash: pass_hash
+    };
+    return response
+
 };
 
 
@@ -220,7 +228,7 @@ const registerAndGetSecret = async (username,password,usertype) => {
         return response
     }
 
-    var pass_hash = crypto.createHash('sha256').update(username+password).digest('hex')
+    var pass_hash = SHA256(username+password)
     user_hash_dict[username] = pass_hash
 
     // Check to see if we've already enrolled the admin user.
