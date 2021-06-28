@@ -1,4 +1,3 @@
-rm -rf project_intern
 nvm install v10.15.3 
 sleep 3
 docker stop $(docker ps -aq) && docker rm $(docker ps -aq)
