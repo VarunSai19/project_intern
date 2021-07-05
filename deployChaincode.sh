@@ -194,7 +194,6 @@ commitChaincodeDefination() {
 queryCommitted() {
     setGlobalsForPeer0Org1
     peer lifecycle chaincode querycommitted --channelID $CHANNEL_NAME --name ${CC_NAME}
-
 }
 
 # queryCommitted

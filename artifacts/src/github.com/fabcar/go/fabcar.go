@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+	"encoding/base64"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 	"github.com/hyperledger/fabric/common/flogging"
 )
@@ -16,74 +17,121 @@ type SmartContract struct {
 
 var logger = flogging.MustGetLogger("fabcar_cc")
 
+type TelcoData struct{
+	AadharNumber string `json:"AadharNumber"`
+	Name   string `json:"Name"`
+	PhoneNumber  string `json:"PhoneNumber"`
+	Status   string `json:"Status"`
+}
+
+type HistoryQueryResult struct {
+	Record    *TelcoData    `json:"record"`
+	TxId     string    `json:"txId"`
+	Timestamp time.Time `json:"timestamp"`
+	IsDelete  bool      `json:"isDelete"`
+}
+
+type AadharData struct {
+	AadharNumber   string `json:"AadharNumber"`
+	Address    string `json:"Address"`
+	DateOfBirth   string `json:"DateOfBirth"`
+	Name   string `json:"Name"`
+	Gender   string `json:"Gender"`
+}
+
+type DrivingLicence struct {
+	LicenceNumber  string `json:"LicenceNumber"`
+	Address    string `json:"Address"`
+	DateOfBirth   string `json:"DateOfBirth"`
+	Name   string `json:"Name"`
+	Gender   string `json:"Gender"`
+	LicenceValidity   string `json:"LicenceValidity"`
+}
+
+type User_Data struct {
+	UserName   string `json:"UserName"`
+	AadharNumber   string `json:"AadharNumber"`
+	LicenceNumber  string `json:"LicenceNumber"`
+	Address    string `json:"Address"`
+	DateOfBirth   string `json:"DateOfBirth"`
+	Name   string `json:"Name"`
+	Gender   string `json:"Gender"`
+	LicenceValidity   string `json:"LicenceValidity"`
+}
+
 type Car struct {
 	ID      string `json:"id"`
 	Make    string `json:"make"`
 	Model   string `json:"model"`
 	Color   string `json:"color"`
 	Owner   string `json:"owner"`
-	AddedAt uint64 `json:"addedAt"`
+	AddedAt uint64 `json:"addedAt"`	
 }
 
-func (s *SmartContract) CreateCar(ctx contractapi.TransactionContextInterface, carData string) (string, error) {
-
-	if len(carData) == 0 {
-		return "", fmt.Errorf("Please pass the correct car data")
+func (s *SmartContract) CreateData(ctx contractapi.TransactionContextInterface, Data string) (string, error) {
+	if len(Data) == 0 {
+		return "", fmt.Errorf("Please pass the correct data")
 	}
-	var usertype
-	usertype := ctx.GetClientIdentity().getAttributeValue("usertype")
-	var car Car
-	err := json.Unmarshal([]byte(carData), &car)
+	
+	// err1 := ctx.GetClientIdentity().AssertAttributeValue("usertype", "customer")
+	// if err1 != nil {
+	// 	return "",fmt.Errorf("submitting client not authorized to create asset.")
+	// }
+
+	var data TelcoData
+	err := json.Unmarshal([]byte(Data), &data)
 	if err != nil {
-		return "", fmt.Errorf("Failed while unmarshling car. %s", err.Error())
+		return "", fmt.Errorf("Failed while unmarshling Data. %s", err.Error())
 	}
 
-	carAsBytes, err := json.Marshal(car)
+	dataAsBytes, err := json.Marshal(data)
 	if err != nil {
-		return "", fmt.Errorf("Failed while marshling car. %s", err.Error())
+		return "", fmt.Errorf("Failed while marshling Data. %s", err.Error())
 	}
 
-	ctx.GetStub().SetEvent("CreateAsset", carAsBytes)
+	ctx.GetStub().SetEvent("CreateAsset", dataAsBytes)
 
-	return ctx.GetStub().GetTxID(), ctx.GetStub().PutState(car.ID, carAsBytes)
+	return ctx.GetStub().GetTxID(), ctx.GetStub().PutState(data.PhoneNumber, dataAsBytes)
 }
 
-//
-func (s *SmartContract) UpdateCarOwner(ctx contractapi.TransactionContextInterface, carID string, newOwner string) (string, error) {
 
-	if len(carID) == 0 {
-		return "", fmt.Errorf("Please pass the correct car id")
+func (s *SmartContract) GetDataByPhoneNumber(ctx contractapi.TransactionContextInterface, ID string) (*TelcoData, error) {
+	if len(ID) == 0 {
+		return nil, fmt.Errorf("Please provide correct contract Id")
 	}
 
-	carAsBytes, err := ctx.GetStub().GetState(carID)
+	// err := ctx.GetClientIdentity().AssertAttributeValue("usertype", "telco-admin")
+	clientID,err_id := s.GetSubmittingClientIdentity(ctx)
+
+	if err_id != nil{
+		return nil,err_id
+	}
+
+
+	// if err != nil {
+	// 	return "",fmt.Errorf("submitting client not authorized to create asset.")
+	// }
+
+	fmt.Print("Id of the user is ",clientID,"\n")
+
+	dataAsBytes, err := ctx.GetStub().GetState(ID)
 
 	if err != nil {
-		return "", fmt.Errorf("Failed to get car data. %s", err.Error())
+		return nil, fmt.Errorf("Failed to read from world state. %s", err.Error())
 	}
 
-	if carAsBytes == nil {
-		return "", fmt.Errorf("%s does not exist", carID)
+	if dataAsBytes == nil {
+		return nil, fmt.Errorf("%s does not exist", ID)
 	}
+	data := new(TelcoData)
+	_ = json.Unmarshal(dataAsBytes, data)
 
-	car := new(Car)
-	_ = json.Unmarshal(carAsBytes, car)
-
-	car.Owner = newOwner
-
-	carAsBytes, err = json.Marshal(car)
-	if err != nil {
-		return "", fmt.Errorf("Failed while marshling car. %s", err.Error())
-	}
-
-	//  txId := ctx.GetStub().GetTxID()
-
-	return ctx.GetStub().GetTxID(), ctx.GetStub().PutState(car.ID, carAsBytes)
-
+	return data, nil
 }
 
-func (s *SmartContract) GetHistoryForAsset(ctx contractapi.TransactionContextInterface, carID string) (string, error) {
+func (s *SmartContract) GetHistoryForAsset(ctx contractapi.TransactionContextInterface, ID string) (string, error) {
 
-	resultsIterator, err := ctx.GetStub().GetHistoryForKey(carID)
+	resultsIterator, err := ctx.GetStub().GetHistoryForKey(ID)
 	if err != nil {
 		return "", fmt.Errorf(err.Error())
 	}
@@ -131,6 +179,121 @@ func (s *SmartContract) GetHistoryForAsset(ctx contractapi.TransactionContextInt
 	return string(buffer.Bytes()), nil
 }
 
+func (s *SmartContract) DeleteDataByUserName(ctx contractapi.TransactionContextInterface, ID string) (string, error) {
+	if len(ID) == 0 {
+		return "", fmt.Errorf("Please provide correct contract Id")
+	}
+
+	return ctx.GetStub().GetTxID(), ctx.GetStub().DelState(ID)
+}
+
+func (s *SmartContract) GetSubmittingClientIdentity(ctx contractapi.TransactionContextInterface) (string, error) {
+
+	b64ID, err := ctx.GetClientIdentity().GetID()
+	if err != nil {
+		return "", fmt.Errorf("Failed to read clientID: %v", err)
+	}
+	decodeID, err := base64.StdEncoding.DecodeString(b64ID)
+	if err != nil {
+		return "", fmt.Errorf("failed to base64 decode clientID: %v", err)
+	}
+	return string(decodeID), nil
+}
+
+
+func (s *SmartContract) getQueryResultForQueryString(ctx contractapi.TransactionContextInterface, queryString string) ([]TelcoData, error) {
+
+	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	if err != nil {
+		return nil, err
+	}
+	defer resultsIterator.Close()
+
+	results := []TelcoData{}
+
+	for resultsIterator.HasNext() {
+		response, err := resultsIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+
+		newData := new(TelcoData)
+		fmt.Print("Responce is ",response.Value,"\n")
+		err = json.Unmarshal(response.Value, newData)
+		if err == nil {
+			results = append(results, *newData)
+		}
+	}
+	return results, nil
+}
+
+func (s *SmartContract) QueryAllData(ctx contractapi.TransactionContextInterface, queryString string) ([]TelcoData, error) {
+	err := ctx.GetClientIdentity().AssertAttributeValue("usertype", "telco-admin")
+	if err != nil {
+		return nil,fmt.Errorf("submitting client not authorized to perform this task.")
+	}
+
+	return s.getQueryResultForQueryString(ctx,queryString)
+}
+
+
+func (s *SmartContract) CreateCar(ctx contractapi.TransactionContextInterface, carData string) (string, error) {
+
+	if len(carData) == 0 {
+		return "", fmt.Errorf("Please pass the correct car data")
+	}
+
+	var car Car
+	err := json.Unmarshal([]byte(carData), &car)
+	if err != nil {
+		return "", fmt.Errorf("Failed while unmarshling car. %s", err.Error())
+	}
+
+	carAsBytes, err := json.Marshal(car)
+	if err != nil {
+		return "", fmt.Errorf("Failed while marshling car. %s", err.Error())
+	}
+
+	ctx.GetStub().SetEvent("CreateAsset", carAsBytes)
+
+	return ctx.GetStub().GetTxID(), ctx.GetStub().PutState(car.ID, carAsBytes)
+}
+
+
+//
+func (s *SmartContract) UpdateCarOwner(ctx contractapi.TransactionContextInterface, carID string, newOwner string) (string, error) {
+
+	if len(carID) == 0 {
+		return "", fmt.Errorf("Please pass the correct car id")
+	}
+
+	carAsBytes, err := ctx.GetStub().GetState(carID)
+
+	if err != nil {
+		return "", fmt.Errorf("Failed to get car data. %s", err.Error())
+	}
+
+	if carAsBytes == nil {
+		return "", fmt.Errorf("%s does not exist", carID)
+	}
+
+	car := new(Car)
+	_ = json.Unmarshal(carAsBytes, car)
+
+	car.Owner = newOwner
+
+	carAsBytes, err = json.Marshal(car)
+	if err != nil {
+		return "", fmt.Errorf("Failed while marshling car. %s", err.Error())
+	}
+
+	//  txId := ctx.GetStub().GetTxID()
+
+	return ctx.GetStub().GetTxID(), ctx.GetStub().PutState(car.ID, carAsBytes)
+
+}
+
+
 func (s *SmartContract) GetCarById(ctx contractapi.TransactionContextInterface, carID string) (*Car, error) {
 	if len(carID) == 0 {
 		return nil, fmt.Errorf("Please provide correct contract Id")
@@ -162,79 +325,7 @@ func (s *SmartContract) DeleteCarById(ctx contractapi.TransactionContextInterfac
 	return ctx.GetStub().GetTxID(), ctx.GetStub().DelState(carID)
 }
 
-func (s *SmartContract) GetContractsForQuery(ctx contractapi.TransactionContextInterface, queryString string) ([]Car, error) {
 
-	queryResults, err := s.getQueryResultForQueryString(ctx, queryString)
-
-	if err != nil {
-		return nil, fmt.Errorf("Failed to read from ----world state. %s", err.Error())
-	}
-
-	return queryResults, nil
-
-}
-
-func (s *SmartContract) getQueryResultForQueryString(ctx contractapi.TransactionContextInterface, queryString string) ([]Car, error) {
-
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
-	if err != nil {
-		return nil, err
-	}
-	defer resultsIterator.Close()
-
-	results := []Car{}
-
-	for resultsIterator.HasNext() {
-		response, err := resultsIterator.Next()
-		if err != nil {
-			return nil, err
-		}
-
-		newCar := new(Car)
-
-		err = json.Unmarshal(response.Value, newCar)
-		if err != nil {
-			return nil, err
-		}
-
-		results = append(results, *newCar)
-	}
-	return results, nil
-}
-
-func (s *SmartContract) GetDocumentUsingCarContract(ctx contractapi.TransactionContextInterface, documentID string) (string, error) {
-	if len(documentID) == 0 {
-		return "", fmt.Errorf("Please provide correct contract Id")
-	}
-
-	params := []string{"GetDocumentById", documentID}
-	queryArgs := make([][]byte, len(params))
-	for i, arg := range params {
-		queryArgs[i] = []byte(arg)
-	}
-
-	response := ctx.GetStub().InvokeChaincode("document_cc", queryArgs, "mychannel")
-
-	return string(response.Payload), nil
-
-}
-
-func (s *SmartContract) CreateDocumentUsingCarContract(ctx contractapi.TransactionContextInterface, functionName string, documentData string) (string, error) {
-	if len(documentData) == 0 {
-		return "", fmt.Errorf("Please provide correct document data")
-	}
-
-	params := []string{functionName, documentData}
-	queryArgs := make([][]byte, len(params))
-	for i, arg := range params {
-		queryArgs[i] = []byte(arg)
-	}
-
-	response := ctx.GetStub().InvokeChaincode("document_cc", queryArgs, "mychannel")
-
-	return string(response.Payload), nil
-
-}
 
 func main() {
 

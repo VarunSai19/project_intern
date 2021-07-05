@@ -23,47 +23,32 @@ const invoke = require('./app/invoke')
 const qscc = require('./app/qscc')
 const query = require('./app/query')
 
+const channelName = "mychannel"
+const chaincodeName = "fabcar"
+
 app.options('*', cors());
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended: false
 }));
-// set secret variable
-app.set('secret', 'thisismysecret');
-app.use(expressJWT({
-    secret: 'thisismysecret'
-}).unless({
-    path: ['/users','/users/login', '/register']
-}));
-app.use(bearerToken());
+
 
 logger.level = 'debug';
 
+var aadhardata = {}
+aadhardata["1"] = {"Name":"varun","Gender":"M","DateOfBirth":"27011999","Address":"Nellore"};
+aadhardata["12"] = {"Name":"varun","Gender":"M","DateOfBirth":"27011999","Address":"Nellore"};
+aadhardata["123"] = {"Name":"varun","Gender":"M","DateOfBirth":"27011999","Address":"Nellore"};
+aadhardata["1234"] = {"Name":"varun","Gender":"M","DateOfBirth":"27011999","Address":"Nellore"};
+aadhardata["12345"] = {"Name":"varun","Gender":"M","DateOfBirth":"27011999","Address":"Nellore"};
 
 app.use((req, res, next) => {
     logger.debug('New req for %s', req.originalUrl);
-    if (req.originalUrl.indexOf('/users') >= 0 || req.originalUrl.indexOf('/users/login') >= 0 || req.originalUrl.indexOf('/register') >= 0) {
+    if (req.originalUrl.indexOf('/user/varun/add_data') >= 0 || req.originalUrl.indexOf('/users') >= 0 || req.originalUrl.indexOf('login') >= 0 || req.originalUrl.indexOf('/register') >= 0) {
         return next();
     }
-    var token = req.token;
-    jwt.verify(token, app.get('secret'), (err, decoded) => {
-        if (err) {
-            console.log(`Error ================:${err}`)
-            res.send({
-                success: false,
-                message: 'Failed to authenticate token. Make sure to include the ' +
-                    'token returned from /users call in the authorization header ' +
-                    ' as a Bearer token'
-            });
-            return;
-        } else {
-            req.username = decoded.username;
-            req.orgname = decoded.orgName;
-            logger.debug(util.format('Decoded from JWT token: username - %s, orgname - %s', decoded.username, decoded.orgName));
-            return next();
-        }
-    });
+    return next();
 });
 
 var server = http.createServer(app).listen(port, function () { console.log(`Server started on ${port}`) });
@@ -78,42 +63,6 @@ function getErrorMessage(field) {
     };
     return response;
 }
-
-// Register and enroll user
-app.post('/users', async function (req, res) {
-    var username = req.body.username;
-    var usertype = req.body.usertype;
-    logger.debug('End point : /users');
-    logger.debug('User name : ' + username);
-    logger.debug('Org name  : ' + orgName);
-    if (!username) {
-        res.json(getErrorMessage('\'username\''));
-        return;
-    }
-    if (!orgName) {
-        res.json(getErrorMessage('\'orgName\''));
-        return;
-    }
-
-    var token = jwt.sign({
-        exp: Math.floor(Date.now() / 1000) + parseInt(constants.jwt_expiretime),
-        username: username,
-        orgName: orgName
-    }, app.get('secret'));
-
-    let response = await helper.getRegisteredUser(username, password,usertype, true);
-
-    logger.debug('-- returned from registering the username %s for organization %s', username, orgName);
-    if (response && typeof response !== 'string') {
-        logger.debug('Successfully registered the username %s for organization %s', username, orgName);
-        response.token = token;
-        res.json(response);
-    } else {
-        logger.debug('Failed to register the username %s for organization %s with::%s', username, orgName, response);
-        res.json({ success: false, message: response });
-    }
-
-});
 
 // Register and enroll user
 app.post('/register', async function (req, res) {
@@ -137,13 +86,6 @@ app.post('/register', async function (req, res) {
         res.json(getErrorMessage('\'usertype\''));
         return;
     }
-    // var token = jwt.sign({
-    //     exp: Math.floor(Date.now() / 1000) + parseInt(constants.jwt_expiretime),
-    //     username: username,
-    //     orgName: orgName
-    // }, app.get('secret'));
-
-    // console.log(token)
 
     let response = await helper.Register(username, password,usertype);
 
@@ -158,11 +100,24 @@ app.post('/register', async function (req, res) {
 
 });
 
-// Login and get jwt
+// Login 
+// Here we need to develop front end page for each login files
 app.post('/login', async function (req, res) {
     var username = req.body.username;
+    const user_present = username in user_hash_dict
+    if(!user_present) 
+    {
+        console.log(`An identity for the user ${username} not exists`);
+        var response = {
+            success: false,
+            message: username + ' was not enrolled',
+        };
+        return response
+    }
     var password = req.body.password;
-    logger.debug('End point : /users');
+    var usertype = req.body.usertype;
+    var orgName = helper.getOrg(usertype);
+    logger.debug('End point : /login');
     logger.debug('User name : ' + username);
     logger.debug('Password  : ' + password);
     if (!username) {
@@ -170,60 +125,67 @@ app.post('/login', async function (req, res) {
         return;
     }
     if (!password) {
-        res.json(getErrorMessage('\'orgName\''));
+        res.json(getErrorMessage('\'Password\''));
         return;
     }
-
-    var token = jwt.sign({
-        exp: Math.floor(Date.now() / 1000) + parseInt(constants.jwt_expiretime),
-        username: username,
-        orgName: orgName
-    }, app.get('secret'));
-
-    let isUserRegistered = await helper.isUserRegistered(username, orgName);
-
-    if (isUserRegistered) {
-        res.json({ success: true, message: { token: token } });
-
-    } else {
-        res.json({ success: false, message: `User with username ${username} is not registered with ${orgName}, Please register first.` });
+    // This should be changed as per the file in GCP
+    var pass_hash = SHA256(username+password)
+    if(JSON.stringify(user_hash_dict[username]["password_hash"]["words"]) !== JSON.stringify(pass_hash["words"]))
+    {
+        res.json({success: false, message: "Invalid Credentials" });
     }
+    res.json({ success: true });
 });
 
 
-// Invoke transaction on chaincode on target peers
-app.post('/channels/:channelName/chaincodes/:chaincodeName', async function (req, res) {
-    try {
-        logger.debug('==================== INVOKE ON CHAINCODE ==================');
-        var peers = req.body.peers;
-        var chaincodeName = req.params.chaincodeName;
-        var channelName = req.params.channelName;
-        var fcn = req.body.fcn;
-        var args = req.body.args;
-        var transient = req.body.transient;
-        console.log(`Transient data is ;${transient}`)
-        logger.debug('channelName  : ' + channelName);
-        logger.debug('chaincodeName : ' + chaincodeName);
-        logger.debug('fcn  : ' + fcn);
-        logger.debug('args  : ' + args);
-        if (!chaincodeName) {
-            res.json(getErrorMessage('\'chaincodeName\''));
+app.post('/user/:userid/ChangeDetails' ,async function (req,res){
+    try{
+        var password = req.body.password;
+        var username = req.params.userid;
+        var pass_hash = SHA256(username+password)
+        if(JSON.stringify(user_hash_dict[username]["password_hash"]["words"]) !== JSON.stringify(pass_hash["words"]))
+        {
+            res.json({success: false, message: "Invalid Credentials" });
             return;
         }
-        if (!channelName) {
-            res.json(getErrorMessage('\'channelName\''));
-            return;
-        }
-        if (!fcn) {
-            res.json(getErrorMessage('\'fcn\''));
-            return;
-        }
-        if (!args) {
-            res.json(getErrorMessage('\'args\''));
-            return;
-        }
+        var args = {};
+        args["AadharNumber"] = JSON.stringify(req.body.AadharNumber);
+        args["Address"] = req.body.Address;
+        args["DateOfBirth"] = req.body.DateOfBirth;
+        args["Name"] = req.body.Name;
+        args["Gender"] = req.body.Gender;
+        
+        console.log(`Input is ${args}`)
 
-        let message = await invoke.invokeTransaction(channelName, chaincodeName, fcn, args, req.username, req.orgname, transient);
+        var actual_data = aadhardata[args["AadharNumber"]]
+
+        console.log(`Actual data is ${actual_data}`)
+
+        if(!actual_data)
+        {
+            result = "Aadhar data doesnt exist in server";
+            const response_payload = {
+                result: result,
+                error: error.name,
+                errorData: error.message
+            }
+            res.send(response_payload)
+        }
+        console.log("Aadhar data present in the system.")
+        const valid = await helper.ValidateAadhar(actual_data,args);
+        if(!valid)
+        {
+            result = "Data provided is not matched by actual data.";
+            const response_payload = {
+                result: result,
+                error: error.name,
+                errorData: error.message
+            }
+            res.send(response_payload)
+        }
+        console.log("Aadhar data matched.")
+
+        let message = await invoke.invokeTransaction("ChangeData",args["PhoneNumber"],args);
         console.log(`message result is : ${message}`)
 
         const response_payload = {
@@ -233,6 +195,135 @@ app.post('/channels/:channelName/chaincodes/:chaincodeName', async function (req
         }
         res.send(response_payload);
 
+    }
+    catch(error)
+    {
+        const response_payload = {
+            result: null,
+            error: error.name,
+            errorData: error.message
+        }
+        res.send(response_payload)
+    }
+});
+
+app.post('/dealer/getSimCard' ,async function (req,res){
+    try{
+        var password = req.body.password;
+
+        var args = {};
+        args["AadharNumber"] = JSON.stringify(req.body.AadharNumber);
+        args["Address"] = req.body.Address;
+        args["DateOfBirth"] = req.body.DateOfBirth;
+        args["Name"] = req.body.Name;
+        // args["AltenativeNumber"] = JSON.stringify(req.body.AltenativeNumber);
+        args["PhoneNumber"] = JSON.stringify(req.body.PhoneNumber);
+        args["Gender"] = req.body.Gender;
+        
+        console.log(`Input is ${args}`)
+
+        var actual_data = aadhardata[args["AadharNumber"]]
+
+        console.log(`Actual data is ${actual_data}`)
+
+        if(!actual_data)
+        {
+            result = "Aadhar data doesnt exist in server";
+            const response_payload = {
+                result: result,
+                error: error.name,
+                errorData: error.message
+            }
+            res.send(response_payload)
+        }
+        console.log("Aadhar data present in the system.")
+        const valid = await helper.ValidateAadhar(actual_data,args);
+        if(!valid)
+        {
+            result = "Data provided is not matched by actual data.";
+            const response_payload = {
+                result: result,
+                error: error.name,
+                errorData: error.message
+            }
+            res.send(response_payload)
+        }
+        console.log("Aadhar data matched.")
+        let response = await helper.Register(args["PhoneNumber"], password,"customer");
+        
+        console.log("User created...")
+
+        let message = await invoke.invokeTransaction("CreateData",args["PhoneNumber"],args);
+        console.log(`message result is : ${message}`)
+
+        const response_payload = {
+            result: message,
+            error: null,
+            errorData: null
+        }
+        res.send(response_payload);
+
+    }
+    catch(error)
+    {
+        const response_payload = {
+            result: null,
+            error: error.name,
+            errorData: error.message
+        }
+        res.send(response_payload)
+    }
+});
+
+app.get('/admin/:username/GetIdentity', async function (req, res) {
+    try{
+        let username = req.params.username
+        let message = await query.query(null, "GetSubmittingClientIdentity",username,"Org1");
+        const response_payload = {
+            result: message,
+            error: null,
+            errorData: null
+        }
+
+        res.send(response_payload);
+    }
+    catch (error) {
+        const response_payload = {
+            result: null,
+            error: error.name,
+            errorData: error.message
+        }
+        res.send(response_payload)
+    }
+});
+
+
+app.get('/admin/:username/GetCustomerByPhoneNumber', async function (req, res) {
+    try {
+        logger.debug('==================== QUERY BY CHAINCODE ==================');
+        
+        let args = req.query.args;
+        let username = req.params.username
+        logger.debug('args : ' + args);
+
+        if (!args) {
+            res.json(getErrorMessage('\'args\''));
+            return;
+        }
+        console.log('args==========', args);
+        args = args.replace(/'/g, '"');
+        args = JSON.parse(args);
+        logger.debug(args);
+
+        let message = await query.query(args, "GetDataByPhoneNumber",username,"Org1");
+
+        const response_payload = {
+            result: message,
+            error: null,
+            errorData: null
+        }
+
+        res.send(response_payload);
     } catch (error) {
         const response_payload = {
             result: null,
@@ -243,16 +334,41 @@ app.post('/channels/:channelName/chaincodes/:chaincodeName', async function (req
     }
 });
 
+
+
+app.get('/admin/:username/GetAllCustomers', async function (req, res) {
+    try {
+        logger.debug('==================== QUERY BY CHAINCODE ==================');
+        
+        let username = req.params.username
+        let message = await query.query(null,"QueryAllData",username,"Org1");
+
+        const response_payload = {
+            result: message,
+            error: null,
+            errorData: null
+        }
+        res.send(response_payload);
+    } catch (error) {
+        const response_payload = {
+            result: null,
+            error: error.name,
+            errorData: error.message
+        }
+        res.send(response_payload)
+    }
+});
+
+
 app.get('/channels/:channelName/chaincodes/:chaincodeName', async function (req, res) {
     try {
         logger.debug('==================== QUERY BY CHAINCODE ==================');
 
-        var channelName = req.params.channelName;
-        var chaincodeName = req.params.chaincodeName;
+        // var channelName = req.params.channelName;
+        // var chaincodeName = req.params.chaincodeName;
         console.log(`chaincode name is :${chaincodeName}`)
         let args = req.query.args;
         let fcn = req.query.fcn;
-        let peer = req.query.peer;
 
         logger.debug('channelName : ' + channelName);
         logger.debug('chaincodeName : ' + chaincodeName);

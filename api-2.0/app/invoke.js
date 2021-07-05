@@ -7,10 +7,21 @@ const logger = log4js.getLogger('BasicNetwork');
 const util = require('util')
 
 const helper = require('./helper');
-const { blockListener, contractListener } = require('./Listeners');
+const query = require('./query');
 
-const invokeTransaction = async (channelName, chaincodeName, fcn, args, username, org_name, transientData) => {
+const { blockListener, contractListener } = require('./Listeners');
+const channelName = "mychannel"
+const chaincodeName = "fabcar"
+var org_name 
+
+
+const invokeTransaction = async (fcn,username,args) => {
     try {
+        if(fcn === "CreateData")
+        {
+            org_name = "Org2";
+        }
+        
         const ccp = await helper.getCCP(org_name);
 
         const walletPath = await helper.getWalletPath(org_name);
@@ -20,12 +31,8 @@ const invokeTransaction = async (channelName, chaincodeName, fcn, args, username
         let identity = await wallet.get(username);
         if (!identity) {
             console.log(`An identity for the user ${username} does not exist in the wallet, so registering user`);
-            await helper.getRegisteredUser(username, org_name, true)
-            identity = await wallet.get(username);
-            console.log('Run the registerUser.js application before retrying');
             return;
         }
-
 
         const connectOptions = {
             wallet, identity: username, discovery: { enabled: true, asLocalhost: true }
@@ -47,20 +54,23 @@ const invokeTransaction = async (channelName, chaincodeName, fcn, args, username
         let message;
 
         switch (fcn) {
-            case "CreateCar":
-                result = await contract.submitTransaction('SmartContract:'+fcn, args[0]);
+            case "CreateData":
+            case "ChangeData":
+                console.log(`User name is ${username}`)
+                var new_args = {};
+                new_args["Name"] = args["Name"];
+                new_args["AadharNumber"] = args["AadharNumber"];
+                new_args["PhoneNumber"] = args["PhoneNumber"];
+                new_args["Status"] = "inactive";
+                console.log(JSON.stringify(new_args));
+                result = await contract.submitTransaction('SmartContract:'+fcn, JSON.stringify(new_args));
                 result = {txid: result.toString()}
                 break;
-            case "UpdateCarOwner":
-                console.log("=============")
-                result = await contract.submitTransaction('SmartContract:'+fcn, args[0], args[1]);
-                result = {txid: result.toString()}
-                break;
-            case "CreateDocument":
-                result = await contract.submitTransaction('DocumentContract:'+fcn, args[0]);
-                console.log(result.toString())
-                result = {txid: result.toString()}
-                break;
+            // case "CreateAadharData":
+            // case "CreateDrivingLicenceData":
+            //     result = await contract.submitTransaction('SmartContract:'+fcn, JSON.stringify(args));
+            //     result = {txid: result.toString()}
+            //     break;
             default:
                 break;
         }
