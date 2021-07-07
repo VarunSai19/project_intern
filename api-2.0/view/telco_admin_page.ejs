@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+  margin: 0;
+}
+.button {
+  background-color: #7FFFD4;
+  border: none;
+  color: black;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  margin: 2.5% 2%;
+  cursor: pointer;
+}
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  width: 15%;
+  background-color: #f1f1f1;
+  position: fixed;
+  height: 100%;
+  overflow: auto;
+}
+
+li a {
+  display: block;
+  color: #000;
+  padding: 8px 16px;
+  text-decoration: none;
+}
+
+li a.active {
+  background-color: #04AA6D;
+  color: white;
+}
+
+li a:hover {
+  background-color: #7FFFD4;
+}
+.center {
+  margin: auto;
+  width: 60%;
+  color: black;
+  padding: 1.5%;
+  margin-left: 30%;
+}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+$(document).ready(function () {
+    $("#search").hide();
+    $("#one").click(function () {
+        $("#home").show();
+        $("#search").hide();
+    });
+
+    $("#two").click(function () {
+        $("#search").show();
+        $("#home").hide();
+    });
+});
+</script>
+</head>
+<body>
+
+<ul>
+  <li id="one"><a href="#home">Get All Customers</a></li>
+  <li id="two"><a href="#search">Search Customer</a></li>
+
+</ul>
+<div class="center" id ="home">
+  <h2>Customer Details</h2>
+</div>
+
+<div class="center" id ="search">
+  <h2>Customer Search</h2>
+
+<form action="/action_page.php">
+  <label for="number">Mobile Number:</label><br>
+  <input type="text" id="number" name="number"><br>
+<br>
+
+
+
+  <input type="button" class="button" value="Search">
+</form> 
+  
+</div>
+
+</body>
+</html>

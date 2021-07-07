@@ -17,11 +17,7 @@ var org_name
 
 const invokeTransaction = async (fcn,username,args) => {
     try {
-        if(fcn === "CreateData")
-        {
-            org_name = "Org2";
-        }
-        
+        org_name = "Org2";
         const ccp = await helper.getCCP(org_name);
 
         const walletPath = await helper.getWalletPath(org_name);
@@ -62,8 +58,15 @@ const invokeTransaction = async (fcn,username,args) => {
                 new_args["AadharNumber"] = args["AadharNumber"];
                 new_args["PhoneNumber"] = args["PhoneNumber"];
                 new_args["Status"] = "inactive";
+                new_args["Money"] = 0;
+                new_args["Transaction_type"] = "info";
                 console.log(JSON.stringify(new_args));
                 result = await contract.submitTransaction('SmartContract:'+fcn, JSON.stringify(new_args));
+                result = {txid: result.toString()}
+                break;
+
+            case "BuyService":
+                result = await contract.submitTransaction('SmartContract:'+fcn, args["Service_name"],args["Price"]);
                 result = {txid: result.toString()}
                 break;
             // case "CreateAadharData":

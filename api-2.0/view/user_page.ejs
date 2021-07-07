@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+  margin: 0;
+}
+.button {
+  background-color: #7FFFD4;
+  border: none;
+  color: black;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  margin: 2.5% 2%;
+  cursor: pointer;
+}
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  width: 15%;
+  background-color: #f1f1f1;
+  position: fixed;
+  height: 100%;
+  overflow: auto;
+}
+
+li a {
+  display: block;
+  color: #000;
+  padding: 8px 16px;
+  text-decoration: none;
+}
+
+li a.active {
+  background-color: #7FFFD4;
+  color: black;
+}
+
+li a:hover {
+  background-color: #7FFFD4;
+ 
+}
+li a:active a {
+  background-color: #7FFFD4;
+}
+.center {
+  margin: auto;
+  width: 60%;
+  color: black;
+  padding: 1.5%;
+  margin-left: 30%;
+}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+$(document).ready(function () {
+    $("#request").hide();
+    $("#services").hide();
+    $("#currentplan").hide();
+    $("#transactions").hide();
+
+    $("#zero").click(function () {
+      $("#home").show();
+      $("#request").hide()
+      $("#services").hide();
+      $("#currentplan").hide();
+      $("#transactions").hide();
+    });
+
+    $("#one").click(function () {
+        $("#home").hide();
+        $("#request").show();
+        $("#services").hide();
+        $("#currentplan").hide();
+        $("#transactions").hide();
+    });
+
+    $("#two").click(function () {
+        $("#home").hide();
+        $("#request").hide();
+        $("#services").show();
+        $("#currentplan").hide();
+        $("#transactions").hide();
+    });
+    $("#three").click(function () {
+        $("#home").hide();
+        $("#request").hide();
+        $("#services").hide();
+        $("#currentplan").show();
+        $("#transactions").hide();
+    });
+    $("#four").click(function () {
+        $("#home").hide();
+        $("#request").hide();
+        $("#services").hide();
+        $("#currentplan").hide();
+        $("#transactions").show();
+    });
+});
+</script>
+</head>
+<body>
+  <ul>
+    <li id="zero"><a href="#home">Home</a></li>
+    <li id="one"><a href="#request">Request Change of Info</a></li>
+    <li id="two"><a href="#services">Services Offered</a></li>
+    <li id="three"><a href="#currentplan">Current Plan</a></li>
+    <li id="four"><a href="#transactions">All Transactions</a></li>
+  </ul>
+<div class="center" id ="request">
+  <h2>User Details</h2>
+  <form action="/action_page.php",method="POST">
+    <label for="name">Name (as per Aadhar):</label><br>
+    <input type="text" id="name" name="name"><br>
+    <br>
+    <label for="anumber">Aadhar Number:</label><br>
+      <input type="text" id="anumber" name="anumber"><br>
+    <br>
+    <label for="address">Address:</label><br>
+    <textarea id="Address" name="Address" rows="4" cols="50">
+      
+      </textarea><br>
+    <br>
+    <p>Gender:</p>
+      <input type="radio" id="gender1" name="gender" value="Male">
+      <label for="gender1">Male</label><br>
+      <input type="radio" id="gender2" name="gender" value="Female">
+      <label for="gender2">Female</label><br> 
+    <br>
+    <label for="dob">Date of Birth:</label><br>
+      <input type="date" id="dob" name="dob"><br>
+    <br>
+    <label for="pwd">Password:</label><br>
+      <input type="password" id="pwd" name="pwd"><br>
+    <br>
+    <label for="proof">Proof Document:</label><br>
+    <input type="file" id="proof" name="proof"><br>
+    <br>
+    <input type="button" class="button" value="Submit">
+</form> 
+</div>
+
+<div class="center" id ="services">
+  <h2>Services offered</h2>
+  
+</div>
+<div class="center" id ="currentplan">
+  <h2>Current Plan</h2>
+  
+</div>
+<div class="center" id ="transactions">
+  <h2>Transaction History</h2>
+  
+</div>
+
+</body>
+</html>

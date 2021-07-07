@@ -50,7 +50,8 @@ const query = async (args, fcn, username, org_name) => {
 
             case "GetSubmittingClientIdentity":
                 result = await contract.evaluateTransaction('SmartContract:'+fcn);
-                break;
+                console.log(`Transaction has been evaluated, result is: ${result.toString()}`);
+                return result;
             default:
                 break;
         }
