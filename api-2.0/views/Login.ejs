@@ -32,7 +32,7 @@
 <body>
   <div class="center">
     <h2 >Block Chain Admin Login</h2>
-    <form method="POST" onsubmit="ale()" action="admin/<%= name1 %> ">
+    <form method="POST">
       <label for="name">Name:</label><br>
       <input type="text" id="name" name="username"><br>
       <br>
@@ -49,13 +49,6 @@
     </form> 
 
   </div>
-  <script>
-    var name1;
-    function ale()
-    {
-      name1 = document.querySelector('#name').value;
-    }
-    
-  </script>
+
 </body>
 </html>
