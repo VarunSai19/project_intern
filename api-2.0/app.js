@@ -21,8 +21,9 @@ var user_hash_dict = require('./app/helper').user_hash_dict
 const invoke = require('./app/invoke')
 const qscc = require('./app/qscc')
 const query = require('./app/query')
-// const PasswordHash = require('./models/schema_pass');
-const Data = require('./schema_data');
+const PasswordHash = require('./models/schema_pass');
+const Data = require('./models/schema_data');
+const { url } = require('inspector');
 const channelName = "mychannel"
 const chaincodeName = "fabcar"
 
@@ -87,7 +88,7 @@ app.get('/', async function(req,res){
 });
 
 app.get('/register',async function (req, res) {
-    res.render('Login',{title:"Register"})
+    res.render('register_admin',{title:"Register"})
 });
 
 // Register and enroll user
@@ -122,23 +123,23 @@ app.post('/register', async function (req, res) {
         var pass_hash = SHA256(username+password)
         pass_hash = JSON.stringify(pass_hash["words"]);
         console.log(pass_hash);
-        // const pw_data = new PasswordHash({
-        //     username:username,
-        //     password_hash:pass_hash
-        // });
-        // pw_data.save();
-        res.render('success',{username,title:"success"})
+        const pw_data = new PasswordHash({
+            username:username,
+            password_hash:pass_hash
+        });
+        pw_data.save();
+        res.render('success',{username:username,title:"success"})
     } else {
         logger.debug('Failed to register the username %s for organization %s with::%s', username, orgName, response);
         // res.json({ success: false, message: response });
-        res.render('failure',{username,title:"failed"})
+        res.render('failure',{username:username,title:"failed"})
     }
 
 });
 
 // Login 
 // Here we need to develop front end page for each login files
-app.post('/Adminlogin', async function (req, res) {
+app.get('/Adminlogin', async function (req, res) {
     res.render('Login',{title:"Admin Login"})
 });
 
@@ -172,11 +173,78 @@ app.post('/Adminlogin', async function (req, res) {
     var pass_hash = SHA256(username+password)
     if(JSON.stringify(user_hash_dict[username]["password_hash"]["words"]) !== JSON.stringify(pass_hash["words"]))
     {
-        res.json({success: false, message: "Invalid Credentials" });
+        res.send({success: false, message: "Invalid Credentials" });
     }
-    res.json({ success: true });
+    var url_resp = "/admin/"+username;
+    res.redirect(url_resp)
 });
 
+app.get('/admin/:username',async function(req,res){
+    var username = req.params.username;
+    res.render('telco_admin_page',{title:"Admin"})
+});
+
+
+app.get('/admin/:username/GetCustomerByPhoneNumber', async function (req, res) {
+    try {
+        logger.debug('==================== QUERY BY CHAINCODE ==================');
+        
+        let args = req.query.args;
+        let username = req.params.username
+        logger.debug('args : ' + args);
+
+        if (!args) {
+            res.json(getErrorMessage('\'args\''));
+            return;
+        }
+        console.log('args==========', args);
+        args = args.replace(/'/g, '"');
+        args = JSON.parse(args);
+        logger.debug(args);
+
+        let message = await query.query(args, "GetDataByPhoneNumber",username,"Org1");
+
+        const response_payload = {
+            result: message,
+            error: null,
+            errorData: null
+        }
+
+        res.send(response_payload);
+    } catch (error) {
+        const response_payload = {
+            result: null,
+            error: error.name,
+            errorData: error.message
+        }
+        res.send(response_payload)
+    }
+});
+
+
+
+app.get('/admin/:username/GetAllCustomers', async function (req, res) {
+    try {
+        logger.debug('==================== QUERY BY CHAINCODE ==================');
+        
+        let username = req.params.username
+        let message = await query.query(null,"QueryAllData",username,"Org1");
+
+        const response_payload = {
+            result: message,
+            error: null,
+            errorData: null
+        }
+        res.send(response_payload);
+    } catch (error) {
+        const response_payload = {
+            result: null,
+            error: error.name,
+            errorData: error.message
+        }
+        res.send(response_payload)
+    }
+});
 
 app.post('/Userlogin', async function (req, res) {
     var username = req.body.username;
@@ -217,7 +285,7 @@ app.post('/Userlogin', async function (req, res) {
 
 
 app.get('/dealer/getSimCard',async function(req,res){
-    res.render('dealer_page',{title:"New User",phonenumbers})
+    res.render('dealer_page',{title:"New User"})
 });
 
 app.post('/dealer/getSimCard' ,async function (req,res){
@@ -421,66 +489,7 @@ app.get('/admin/:username/GetIdentity', async function (req, res) {
 });
 
 
-app.get('/admin/:username/GetCustomerByPhoneNumber', async function (req, res) {
-    try {
-        logger.debug('==================== QUERY BY CHAINCODE ==================');
-        
-        let args = req.query.args;
-        let username = req.params.username
-        logger.debug('args : ' + args);
 
-        if (!args) {
-            res.json(getErrorMessage('\'args\''));
-            return;
-        }
-        console.log('args==========', args);
-        args = args.replace(/'/g, '"');
-        args = JSON.parse(args);
-        logger.debug(args);
-
-        let message = await query.query(args, "GetDataByPhoneNumber",username,"Org1");
-
-        const response_payload = {
-            result: message,
-            error: null,
-            errorData: null
-        }
-
-        res.send(response_payload);
-    } catch (error) {
-        const response_payload = {
-            result: null,
-            error: error.name,
-            errorData: error.message
-        }
-        res.send(response_payload)
-    }
-});
-
-
-
-app.get('/admin/:username/GetAllCustomers', async function (req, res) {
-    try {
-        logger.debug('==================== QUERY BY CHAINCODE ==================');
-        
-        let username = req.params.username
-        let message = await query.query(null,"QueryAllData",username,"Org1");
-
-        const response_payload = {
-            result: message,
-            error: null,
-            errorData: null
-        }
-        res.send(response_payload);
-    } catch (error) {
-        const response_payload = {
-            result: null,
-            error: error.name,
-            errorData: error.message
-        }
-        res.send(response_payload)
-    }
-});
 
 
 app.get('/channels/:channelName/chaincodes/:chaincodeName', async function (req, res) {
