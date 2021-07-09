@@ -8,7 +8,7 @@ var SHA256 = require("crypto-js/sha256");
 const mongoose = require('mongoose')
 const express = require('express')
 const app = express();
-const dbURI = 'mongodb+srv://varun:varun1234@telco-project.rf8w0.mongodb.net/Telco-project?retryWrites=true&w=majority'
+const dbURI = 'mongodb+srv://varun:varun1234@telco-project.rf8w0.mongodb.net/Project?retryWrites=true&w=majority'
 
 const cors = require('cors');
 const constants = require('./config/constants.json')
@@ -22,7 +22,8 @@ const invoke = require('./app/invoke')
 const qscc = require('./app/qscc')
 const query = require('./app/query')
 const PasswordHash = require('./models/schema_pass');
-const Data = require('./models/schema_data');
+const Customer_Data = require('./models/schema_data');
+const Aadhar_Data = require('./models/schema_aadhar');
 const { url } = require('inspector');
 const channelName = "mychannel"
 const chaincodeName = "fabcar"
@@ -262,19 +263,32 @@ app.post('/dealer/getSimCard' ,async function (req,res){
         var password = req.body.password;
 
         var args = {};
-        args["AadharNumber"] = JSON.stringify(req.body.AadharNumber);
+        args["AadharNumber"] = req.body.AadharNumber;
         args["Address"] = req.body.Address;
         args["DateOfBirth"] = req.body.DateOfBirth;
         args["Name"] = req.body.Name;
-        args["AltenativeNumber"] = JSON.stringify(req.body.AltenativeNumber);
-        // args["PhoneNumber"] = JSON.stringify(req.body.PhoneNumber);
+        args["AltenativeNumber"] = req.body.AltenativeNumber;
+        args["PhoneNumber"] = req.body.PhoneNumber;
         args["Gender"] = req.body.Gender;
         
-        console.log(`Input is ${args}`)
+        console.log(req.body.AadharNumber);
+        console.log(req.body.Address);
+        console.log(req.body.DateOfBirth);
+        console.log(req.body.Name);
+        console.log(req.body.Gender);
 
         var actual_data = aadhardata[args["AadharNumber"]]
 
         console.log(`Actual data is ${actual_data}`)
+
+        Aadhar_Data.find({"AadharNumber":args["AadharNumber"]},(err,data)=>{
+            if(err){
+                console.log(err);
+            }
+            else{
+                console.log(data["Name"]);
+            }
+        });
 
         if(!actual_data)
         {
@@ -288,6 +302,7 @@ app.post('/dealer/getSimCard' ,async function (req,res){
         }
         console.log("Aadhar data present in the system.")
         const valid = await helper.ValidateAadhar(actual_data,args);
+        console.log(valid);
         if(!valid)
         {
             result = "Data provided is not matched by actual data.";
@@ -368,7 +383,7 @@ app.post('/Userlogin', async function (req, res) {
 
 
 app.get('/user/:username' ,async function (req,res){
-    res.render('userpage',{title:"User"})
+    res.render('user_page',{title:"User"})
 });
 
 app.get('/user/:username/ChangeDetails' ,async function (req,res){

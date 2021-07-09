@@ -85,7 +85,7 @@ $(document).ready(function () {
 </ul>
 <div class="center" id ="request">
   <h2>User Details</h2>
-  <form action="/userlogin",method="POST">
+  <form method="POST">
     <label for="name">Name (as per Aadhar):</label><br>
     <input type="text" id="name" name="Name"><br>
     <br>
@@ -108,13 +108,16 @@ $(document).ready(function () {
     <label for="alnumber">Alternative Number:</label><br>
       <input type="text" id="alnumber" name="AltenativeNumber"><br>
     <br>
+    <label for="actualnumber">New Number:</label><br>
+      <input type="text" id="alnumber" name="PhoneNumber"><br>
+    <br>
     <label for="pwd">Password:</label><br>
       <input type="password" id="pwd" name="password"><br>
     <br>
     <label for="proof">Proof Document:</label><br>
     <input type="file" id="proof" name="proof"><br>
     <br>
-    <input type="button" class="button" value="Submit">
+    <input type="submit" class="button" value="Submit">
   </form> 
 </div>
 

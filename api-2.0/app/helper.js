@@ -137,12 +137,17 @@ const enrollAdmin = async (org, ccp) => {
 }
 
 const ValidateAadhar = async (actual_data, user_data) => {
-    if(actual_data["Name"] === user_data["Name"] && actual_data["Address"] === user_data["Address"] && 
-    actual_data["DateOfBirth"] === user_data["DateOfBirth"] && actual_data["Gender"] === user_data["Gender"]) 
-    {
-        return true;
+    try{
+        if(actual_data["Name"] === user_data["Name"] && actual_data["Address"] === user_data["Address"] && 
+        actual_data["DateOfBirth"] === user_data["DateOfBirth"] && actual_data["Gender"] === user_data["Gender"]) 
+        {
+            return true;
+        }
+        return false;
     }
-    return false;
+    catch (error) {
+        console.error(`Failed to validate": ${error}`);
+    }
 }
 
 

@@ -23,15 +23,10 @@ const dataSchema = new schema({
     {
         type:String,
         required:true
-    },
-    PhoneNumber:
-    {
-        type:String,
-        required:true
     }
 },{timestamps:true});
 
-const CustomerInfo = mongoose.model('CustomerInfo',dataSchema);
+const AadharInfo = mongoose.model('aadhar_data',dataSchema);
 
 
-module.exports = CustomerInfo;
+module.exports = AadharInfo;
