@@ -30,7 +30,7 @@ const chaincodeName = "fabcar"
 mongoose.connect(dbURI,{useNewUrlParser:true,useUnifiedTopology:true})
     .then((result) => {
         var server = http.createServer(app).listen(port, function () { console.log(`Server started on ${port}`) });
-        logger.info('****************** SERVER STARTED ************************');
+        logger.info('****************** SERVER STARTED AND DATABASE INITIATED ************************');
         logger.info('***************  http://%s:%s  ******************', host, port);
         server.timeout = 240000;
     })
@@ -127,8 +127,14 @@ app.post('/register', async function (req, res) {
             username:username,
             password_hash:pass_hash
         });
-        pw_data.save();
-        res.render('success',{username:username,title:"success"})
+        pw_data.save().then((result) => {
+            console.log(result);
+            res.render('success',{username:username,title:"success"});
+        }).catch((err) => {
+            console.log(err);
+            res.render('failure',{username:username,title:"failed"});
+        });
+        
     } else {
         logger.debug('Failed to register the username %s for organization %s with::%s', username, orgName, response);
         // res.json({ success: false, message: response });
@@ -181,15 +187,19 @@ app.post('/Adminlogin', async function (req, res) {
 
 app.get('/admin/:username',async function(req,res){
     var username = req.params.username;
-    res.render('telco_admin_page',{title:"Admin"})
+    res.render('telco_admin_page',{title:"Admin",username})
+});
+
+app.get('/admin/:username/GetCustomerByPhoneNumber', async function (req, res) {
+    res.render('GetCustomerByNumber',{title:"Get Data"})
 });
 
 
-app.get('/admin/:username/GetCustomerByPhoneNumber', async function (req, res) {
+app.post('/admin/:username/GetCustomerByPhoneNumber', async function (req, res) {
     try {
         logger.debug('==================== QUERY BY CHAINCODE ==================');
         
-        let args = req.query.args;
+        let args = req.body.number;
         let username = req.params.username
         logger.debug('args : ' + args);
 
@@ -198,9 +208,6 @@ app.get('/admin/:username/GetCustomerByPhoneNumber', async function (req, res) {
             return;
         }
         console.log('args==========', args);
-        args = args.replace(/'/g, '"');
-        args = JSON.parse(args);
-        logger.debug(args);
 
         let message = await query.query(args, "GetDataByPhoneNumber",username,"Org1");
 
@@ -245,44 +252,6 @@ app.get('/admin/:username/GetAllCustomers', async function (req, res) {
         res.send(response_payload)
     }
 });
-
-app.post('/Userlogin', async function (req, res) {
-    var username = req.body.username;
-
-    const user_present = helper.isUserRegistered(username,"Org2")
-    if(!user_present) 
-    {
-        console.log(`An identity for the user ${username} not exists`);
-        var response = {
-            success: false,
-            message: username + ' was not enrolled',
-        };
-        return response
-    }
-    var password = req.body.password;
-    var usertype = "customer";
-    var orgName = helper.getOrg(usertype);
-    logger.debug('End point : /login');
-    logger.debug('User name : ' + username);
-    logger.debug('Password  : ' + password);
-    if (!username) {
-        res.json(getErrorMessage('\'username\''));
-        return;
-    }
-    if (!password) {
-        res.json(getErrorMessage('\'Password\''));
-        return;
-    }
-    // This should be changed as per the file in GCP
-    var pass_hash = SHA256(username+password)
-    if(JSON.stringify(user_hash_dict[username]["password_hash"]["words"]) !== JSON.stringify(pass_hash["words"]))
-    {
-        var url_new = '/user'+username
-        res.json({success: false, message: "Invalid Credentials" });
-    }
-    res.json({ success: true });
-});
-
 
 app.get('/dealer/getSimCard',async function(req,res){
     res.render('dealer_page',{title:"New User"})
@@ -356,7 +325,55 @@ app.post('/dealer/getSimCard' ,async function (req,res){
     }
 });
 
+app.get('/Userlogin', async function (req, res) {
+    res.render('userLogin',{title:"User Login"})
+});
 
+app.post('/Userlogin', async function (req, res) {
+    var username = req.body.username;
+
+    const user_present = helper.isUserRegistered(username,"Org2")
+    if(!user_present) 
+    {
+        console.log(`An identity for the user ${username} not exists`);
+        var response = {
+            success: false,
+            message: username + ' was not enrolled',
+        };
+        return response
+    }
+    var password = req.body.password;
+    var usertype = "customer";
+    var orgName = helper.getOrg(usertype);
+    logger.debug('End point : /login');
+    logger.debug('User name : ' + username);
+    logger.debug('Password  : ' + password);
+    if (!username) {
+        res.json(getErrorMessage('\'username\''));
+        return;
+    }
+    if (!password) {
+        res.json(getErrorMessage('\'Password\''));
+        return;
+    }
+    // This should be changed as per the file in GCP
+    var pass_hash = SHA256(username+password)
+    if(JSON.stringify(user_hash_dict[username]["password_hash"]["words"]) !== JSON.stringify(pass_hash["words"]))
+    {
+        res.json({success: false, message: "Invalid Credentials" });
+    }
+    var url_new = '/user/'+username
+    res.redirect(url_new);
+});
+
+
+app.get('/user/:username' ,async function (req,res){
+    res.render('userpage',{title:"User"})
+});
+
+app.get('/user/:username/ChangeDetails' ,async function (req,res){
+    res.render('request_change',{title:"Change Details"})
+});
 
 app.post('/user/:userid/ChangeDetails' ,async function (req,res){
     try{
@@ -426,6 +443,27 @@ app.post('/user/:userid/ChangeDetails' ,async function (req,res){
         res.send(response_payload)
     }
 });
+
+app.get('/user/:username/services' ,async function (req,res){
+    res.render('services',{title:"Services"})
+});
+
+
+
+app.get('/user/:username/currentplan' ,async function (req,res){
+    res.render('currentplan',{title:"Current Plan"})
+});
+
+
+app.get('/user/:username/transactions' ,async function (req,res){
+    // write code to return whole transation history
+    var username = req.params.username;
+    let message = await query.query(null,"GetHistoryForAsset",username,"Org2");
+    res.send(message)
+    // res.render('transactions',{title:"Transactions"})
+});
+
+
 
 app.post('/user/:userid/services/BuyService' ,async function (req,res){
     try{

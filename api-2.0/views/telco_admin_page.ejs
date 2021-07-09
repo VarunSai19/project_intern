@@ -5,8 +5,8 @@
 <body>
 
 <ul>
-  <li id="one"><a href="/GetAllCustomers">Get All Customers</a></li>
-  <li id="two"><a href="/GetCustomerByPhoneNumber">Get Customer By PhoneNumber</a></li>
+  <li id="one"><a href="/admin/<%= username%>/GetAllCustomers">Get All Customers</a></li>
+  <li id="two"><a href="/admin/<%= username%>/GetCustomerByPhoneNumber">Get Customer By PhoneNumber</a></li>
 </ul>
 <div class="center" id ="home">
   <h2>Customer Details</h2>
@@ -15,15 +15,7 @@
 <div class="center" id ="search">
   <h2>Customer Search</h2>
 
-<form action="/action_page.php">
-  <label for="number">Mobile Number:</label><br>
-  <input type="text" id="number" name="number"><br>
-<br>
-
-
-
-  <input type="button" class="button" value="Search">
-</form> 
+ 
   
 </div>
 

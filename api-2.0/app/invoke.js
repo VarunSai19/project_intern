@@ -51,7 +51,6 @@ const invokeTransaction = async (fcn,username,args) => {
 
         switch (fcn) {
             case "CreateData":
-            case "ChangeData":
                 console.log(`User name is ${username}`)
                 var new_args = {};
                 new_args["Name"] = args["Name"];
@@ -64,7 +63,19 @@ const invokeTransaction = async (fcn,username,args) => {
                 result = await contract.submitTransaction('SmartContract:'+fcn, JSON.stringify(new_args));
                 result = {txid: result.toString()}
                 break;
-
+            
+            case "ChangeData":
+                console.log(`User name is ${username}`)
+                var new_args = {};
+                new_args["Name"] = args["Name"];
+                new_args["AadharNumber"] = args["AadharNumber"];
+                new_args["PhoneNumber"] = username;
+                new_args["Transaction_type"] = "info";
+                console.log(JSON.stringify(new_args));
+                result = await contract.submitTransaction('SmartContract:'+fcn, JSON.stringify(new_args));
+                result = {txid: result.toString()}
+                break;
+            
             case "BuyService":
                 result = await contract.submitTransaction('SmartContract:'+fcn, args["Service_name"],args["Price"]);
                 result = {txid: result.toString()}

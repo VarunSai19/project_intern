@@ -40,7 +40,7 @@ const query = async (args, fcn, username, org_name) => {
             case "GetDataByPhoneNumber":
             case "GetCarById": 
                 console.log("=============")
-                result = await contract.evaluateTransaction('SmartContract:'+fcn, args[0]);
+                result = await contract.evaluateTransaction('SmartContract:'+fcn, args);
                 break;
 
             case "QueryAllData": 
