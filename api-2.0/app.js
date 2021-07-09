@@ -40,7 +40,6 @@ mongoose.connect(dbURI,{useNewUrlParser:true,useUnifiedTopology:true})
 
 app.use(express.static('public'));
 app.use("/css",express.static(__dirname+'public/css'))
-// app.use("/img",express.static(__dirname+'public/img'))
 
 app.set('views','./views');
 app.set('view engine', 'ejs');
@@ -52,29 +51,7 @@ app.use(bodyParser.urlencoded({
     extended: false
 }));
 
-
 logger.level = 'debug';
-
-var aadhardata = {}
-aadhardata["1"] = {"Name":"varun","Gender":"M","DateOfBirth":"27011999","Address":"Nellore"};
-aadhardata["12"] = {"Name":"varun","Gender":"M","DateOfBirth":"27011999","Address":"Nellore"};
-aadhardata["123"] = {"Name":"varun","Gender":"M","DateOfBirth":"27011999","Address":"Nellore"};
-aadhardata["1234"] = {"Name":"varun","Gender":"M","DateOfBirth":"27011999","Address":"Nellore"};
-aadhardata["12345"] = {"Name":"varun","Gender":"M","DateOfBirth":"27011999","Address":"Nellore"};
-
-// app.use((req, res, next) => {
-//     logger.debug('New req for %s', req.originalUrl);
-//     if (req.originalUrl.indexOf('/user/varun/add_data') >= 0 || req.originalUrl.indexOf('/users') >= 0 || req.originalUrl.indexOf('login') >= 0 || req.originalUrl.indexOf('/register') >= 0) {
-//         return next();
-//     }
-//     return next();
-// });
-
-// var server = http.createServer(app).listen(port, function () { console.log(`Server started on ${port}`) });
-// logger.info('****************** SERVER STARTED ************************');
-// logger.info('***************  http://%s:%s  ******************', host, port);
-// server.timeout = 240000;
-
 
 function getErrorMessage(field) {
     var response = {
@@ -120,7 +97,6 @@ app.post('/register', async function (req, res) {
     logger.debug('-- returned from registering the username %s for organization %s', username, orgName);
     if (response && typeof response !== 'string') {
         logger.debug('Successfully registered the username %s for organization %s', username, orgName);
-        // res.json(response);
         var pass_hash = SHA256(username+password)
         pass_hash = JSON.stringify(pass_hash["words"]);
         console.log(pass_hash);
@@ -138,14 +114,12 @@ app.post('/register', async function (req, res) {
         
     } else {
         logger.debug('Failed to register the username %s for organization %s with::%s', username, orgName, response);
-        // res.json({ success: false, message: response });
         res.render('failure',{username:username,title:"failed"})
     }
 
 });
 
 // Login 
-// Here we need to develop front end page for each login files
 app.get('/Adminlogin', async function (req, res) {
     res.render('Login',{title:"Admin Login"})
 });
@@ -176,12 +150,20 @@ app.post('/Adminlogin', async function (req, res) {
         res.json(getErrorMessage('\'Password\''));
         return;
     }
-    // This should be changed as per the file in GCP
+    
     var pass_hash = SHA256(username+password)
-    if(JSON.stringify(user_hash_dict[username]["password_hash"]["words"]) !== JSON.stringify(pass_hash["words"]))
-    {
-        res.send({success: false, message: "Invalid Credentials" });
-    }
+    PasswordHash.findOne({"username":username},(err,data)=>{
+        if(err)
+        {
+            console.log(err);
+        }
+        else{
+            if(JSON.stringify(data["password_hash"]) !== JSON.stringify(pass_hash["words"]))
+            {
+                res.send({success: false, message: "Invalid Credentials" });
+            }
+        }
+    });
     var url_resp = "/admin/"+username;
     res.redirect(url_resp)
 });
@@ -212,13 +194,8 @@ app.post('/admin/:username/GetCustomerByPhoneNumber', async function (req, res) 
 
         let message = await query.query(args, "GetDataByPhoneNumber",username,"Org1");
 
-        const response_payload = {
-            result: message,
-            error: null,
-            errorData: null
-        }
+        res.render('display',{title:"Details",message});
 
-        res.send(response_payload);
     } catch (error) {
         const response_payload = {
             result: null,
@@ -238,12 +215,8 @@ app.get('/admin/:username/GetAllCustomers', async function (req, res) {
         let username = req.params.username
         let message = await query.query(null,"QueryAllData",username,"Org1");
 
-        const response_payload = {
-            result: message,
-            error: null,
-            errorData: null
-        }
-        res.send(response_payload);
+        res.render('display_all',{title:"All Details",message});
+
     } catch (error) {
         const response_payload = {
             result: null,
@@ -270,64 +243,68 @@ app.post('/dealer/getSimCard' ,async function (req,res){
         args["AltenativeNumber"] = req.body.AltenativeNumber;
         args["PhoneNumber"] = req.body.PhoneNumber;
         args["Gender"] = req.body.Gender;
-        
+        var username = req.body.PhoneNumber;
+
         console.log(req.body.AadharNumber);
         console.log(req.body.Address);
         console.log(req.body.DateOfBirth);
         console.log(req.body.Name);
         console.log(req.body.Gender);
 
-        var actual_data = aadhardata[args["AadharNumber"]]
-
-        console.log(`Actual data is ${actual_data}`)
-
-        Aadhar_Data.find({"AadharNumber":args["AadharNumber"]},(err,data)=>{
+        var actual_data;
+        Aadhar_Data.findOne({"AadharNumber":args["AadharNumber"]},(err,data)=>{
             if(err){
                 console.log(err);
             }
             else{
-                console.log(data["Name"]);
+                actual_data = data;
+                console.log(`Actual data is ${actual_data}`)
+                if(!actual_data)
+                {
+                    result = "Aadhar data doesnt exist in server";
+                    const response_payload = {
+                        result: result,
+                        error: error.name,
+                        errorData: error.message
+                    }
+                    res.send(response_payload)
+                }
+                console.log("Aadhar data present in the Database.")
+                const valid = helper.ValidateAadhar(actual_data,args);
+                console.log(valid);
+                if(!valid)
+                {
+                    result = "Data provided is not matched by actual data.";
+                    const response_payload = {
+                        result: result,
+                        error: error.name,
+                        errorData: error.message
+                    }
+                    res.send(response_payload)
+                }
+                console.log("Aadhar data matched.")
+                let response = helper.Register(args["PhoneNumber"], password,"customer");
+                
+                console.log("User created...")
+
+                let message = invoke.invokeTransaction("CreateData",args["PhoneNumber"],args);
+                console.log(`message result is : ${message}`)
+
+                var pass_hash = SHA256(username+password)
+                pass_hash = JSON.stringify(pass_hash["words"]);
+                console.log(pass_hash);
+                const pw_data = new PasswordHash({
+                    username:username,
+                    password_hash:pass_hash
+                });
+                pw_data.save().then((result) => {
+                    console.log(result);
+                }).catch((err) => {
+                    console.log(err);
+                });
+                res.render(success_user,{title:success,username});
             }
         });
-
-        if(!actual_data)
-        {
-            result = "Aadhar data doesnt exist in server";
-            const response_payload = {
-                result: result,
-                error: error.name,
-                errorData: error.message
-            }
-            res.send(response_payload)
-        }
-        console.log("Aadhar data present in the system.")
-        const valid = await helper.ValidateAadhar(actual_data,args);
-        console.log(valid);
-        if(!valid)
-        {
-            result = "Data provided is not matched by actual data.";
-            const response_payload = {
-                result: result,
-                error: error.name,
-                errorData: error.message
-            }
-            res.send(response_payload)
-        }
-        console.log("Aadhar data matched.")
-        let response = await helper.Register(args["PhoneNumber"], password,"customer");
-        
-        console.log("User created...")
-
-        let message = await invoke.invokeTransaction("CreateData",args["PhoneNumber"],args);
-        console.log(`message result is : ${message}`)
-
-        const response_payload = {
-            result: message,
-            error: null,
-            errorData: null
-        }
-        res.send(response_payload);
-
     }
     catch(error)
     {
@@ -373,10 +350,18 @@ app.post('/Userlogin', async function (req, res) {
     }
     // This should be changed as per the file in GCP
     var pass_hash = SHA256(username+password)
-    if(JSON.stringify(user_hash_dict[username]["password_hash"]["words"]) !== JSON.stringify(pass_hash["words"]))
-    {
-        res.json({success: false, message: "Invalid Credentials" });
-    }
+    PasswordHash.findOne({"username":username},(err,data)=>{
+        if(err)
+        {
+            console.log(err);
+        }
+        else{
+            if(JSON.stringify(data["password_hash"]) !== JSON.stringify(pass_hash["words"]))
+            {
+                res.send({success: false, message: "Invalid Credentials" });
+            }
+        }
+    });
     var url_new = '/user/'+username
     res.redirect(url_new);
 });
@@ -395,13 +380,20 @@ app.post('/user/:userid/ChangeDetails' ,async function (req,res){
         var password = req.body.password;
         var username = req.params.userid;
         var pass_hash = SHA256(username+password)
-        if(JSON.stringify(user_hash_dict[username]["password_hash"]["words"]) !== JSON.stringify(pass_hash["words"]))
-        {
-            res.json({success: false, message: "Invalid Credentials" });
-            return;
-        }
+        PasswordHash.findOne({"username":username},(err,data)=>{
+            if(err)
+            {
+                console.log(err);
+            }
+            else{
+                if(JSON.stringify(data["password_hash"]) !== JSON.stringify(pass_hash["words"]))
+                {
+                    res.send({success: false, message: "Invalid Credentials" });
+                }
+            }
+        });
         var args = {};
-        args["AadharNumber"] = JSON.stringify(req.body.AadharNumber);
+        args["AadharNumber"] = req.body.AadharNumber;
         args["Address"] = req.body.Address;
         args["DateOfBirth"] = req.body.DateOfBirth;
         args["Name"] = req.body.Name;
@@ -409,44 +401,56 @@ app.post('/user/:userid/ChangeDetails' ,async function (req,res){
         
         console.log(`Input is ${args}`)
 
-        var actual_data = aadhardata[args["AadharNumber"]]
+        var actual_data;
 
-        console.log(`Actual data is ${actual_data}`)
+        // console.log(`Actual data is ${actual_data}`) 
 
-        if(!actual_data)
-        {
-            result = "Aadhar data doesnt exist in server";
-            const response_payload = {
-                result: result,
-                error: error.name,
-                errorData: error.message
+        Aadhar_Data.findOne({"AadharNumber":args["AadharNumber"]},(err,data)=>{
+            if(err){
+                console.log(err);
             }
-            res.send(response_payload)
-        }
-        console.log("Aadhar data present in the system.")
-        const valid = await helper.ValidateAadhar(actual_data,args);
-        if(!valid)
-        {
-            result = "Data provided is not matched by actual data.";
-            const response_payload = {
-                result: result,
-                error: error.name,
-                errorData: error.message
+            else{
+                actual_data = data;
+                console.log(`Actual data is ${actual_data}`)
+                if(!actual_data)
+                {
+                    result = "Aadhar data doesnt exist in server";
+                    const response_payload = {
+                        result: result,
+                        error: error.name,
+                        errorData: error.message
+                    }
+                    res.send(response_payload)
+                }
+                console.log("Aadhar data present in the Database.")
+                const valid = helper.ValidateAadhar(actual_data,args);
+                console.log(valid);
+                if(!valid)
+                {
+                    result = "Data provided is not matched by actual data.";
+                    const response_payload = {
+                        result: result,
+                        error: error.name,
+                        errorData: error.message
+                    }
+                    res.send(response_payload)
+                }
+                console.log("Aadhar data matched.")
+                let response = helper.Register(args["PhoneNumber"], password,"customer");
+                
+                console.log("User created...")
+
+                let message = invoke.invokeTransaction("CreateData",args["PhoneNumber"],args);
+                console.log(`message result is : ${message}`)
+
+                const response_payload = {
+                    TransactionID: message,
+                    result:"Successful",
+                    error: null,
+                    errorData: null
+                }
             }
-            res.send(response_payload)
-        }
-        console.log("Aadhar data matched.")
-
-        let message = await invoke.invokeTransaction("ChangeData",args["PhoneNumber"],args);
-        console.log(`message result is : ${message}`)
-
-        const response_payload = {
-            result: message,
-            error: null,
-            errorData: null
-        }
-        res.send(response_payload);
-
+        });
     }
     catch(error)
     {
@@ -458,7 +462,6 @@ app.post('/user/:userid/ChangeDetails' ,async function (req,res){
         res.send(response_payload)
     }
 });
-
 app.get('/user/:username/services' ,async function (req,res){
     res.render('services',{title:"Services"})
 });

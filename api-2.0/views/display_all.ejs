@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+ <%- include('./partials/header.ejs') %> 
+<body>
+    <ol>
+        <% for(var person of message) { %>
+            <li>
+                <ul>
+                    <li>person["PhoneNumber"]</li>
+                    <li>person["Name"]</li>
+                    <li>person["AadharNumber"]</li>
+                    <li>person["Status"]</li>
+                    <li>person["Money"]</li>
+                </ul>
+            </li>
+        <% } %>
+    </ol>
+</body>
+</html>
+
