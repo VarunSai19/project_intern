@@ -125,47 +125,55 @@ app.get('/Adminlogin', async function (req, res) {
 });
 
 app.post('/Adminlogin', async function (req, res) {
-    var username = req.body.username;
-    const user_present = helper.isUserRegistered(username,"Org1")
-    if(!user_present) 
-    {
-        console.log(`An identity for the user ${username} not exists`);
-        var response = {
-            success: false,
-            message: username + ' was not enrolled',
-        };
-        return response
-    }
-    var password = req.body.password;
-    var usertype = req.body.usertype;
-    var orgName = helper.getOrg(usertype);
-    logger.debug('End point : /login');
-    logger.debug('User name : ' + username);
-    logger.debug('Password  : ' + password);
-    if (!username) {
-        res.json(getErrorMessage('\'username\''));
-        return;
-    }
-    if (!password) {
-        res.json(getErrorMessage('\'Password\''));
-        return;
-    }
-    
-    var pass_hash = SHA256(username+password)
-    PasswordHash.findOne({"username":username},(err,data)=>{
-        if(err)
+    try{
+        var username = req.body.username;
+        const user_present = helper.isUserRegistered(username,"Org1")
+        if(!user_present) 
         {
-            console.log(err);
+            console.log(`An identity for the user ${username} not exists`);
+            var response = {
+                success: false,
+                message: username + ' was not enrolled',
+            };
+            return response
         }
-        else{
-            if(JSON.stringify(data["password_hash"]) !== JSON.stringify(pass_hash["words"]))
+        var password = req.body.password;
+        var usertype = req.body.usertype;
+        var orgName = helper.getOrg(usertype);
+        logger.debug('End point : /login');
+        logger.debug('User name : ' + username);
+        logger.debug('Password  : ' + password);
+        if (!username) {
+            res.json(getErrorMessage('\'username\''));
+            return;
+        }
+        if (!password) {
+            res.json(getErrorMessage('\'Password\''));
+            return;
+        }
+        var pass_hash = SHA256(username+password)
+        PasswordHash.findOne({"username":username},(err,data)=>{
+            if(err)
             {
-                res.send({success: false, message: "Invalid Credentials" });
+                console.log(err);
             }
+            else{
+                if(JSON.stringify(data["password_hash"]) !== JSON.stringify(pass_hash["words"]))
+                {
+                    res.send({success: false, message: "Invalid Credentials" });
+                }
+            }
+        });
+        var url_resp = "/admin/"+username;
+        res.redirect(url_resp)
+    }catch (error) {
+        const response_payload = {
+            result: null,
+            error: error.name,
+            errorData: error.message
         }
-    });
-    var url_resp = "/admin/"+username;
-    res.redirect(url_resp)
+        res.send(response_payload)
+    }
 });
 
 app.get('/admin/:username',async function(req,res){
@@ -227,11 +235,11 @@ app.get('/admin/:username/GetAllCustomers', async function (req, res) {
     }
 });
 
-app.get('/dealer/getSimCard',async function(req,res){
+app.get('/dealer/getSimCard',function(req,res){
     res.render('dealer_page',{title:"New User"})
 });
 
-app.post('/dealer/getSimCard' ,async function (req,res){
+app.post('/dealer/getSimCard' ,function (req,res){
     try{
         var password = req.body.password;
 
@@ -288,6 +296,7 @@ app.post('/dealer/getSimCard' ,async function (req,res){
                 console.log("User created...")
 
                 let message = invoke.invokeTransaction("CreateData",args["PhoneNumber"],args);
+                console.log(message);
                 console.log(`message result is : ${message}`)
 
                 var pass_hash = SHA256(username+password)
@@ -302,7 +311,7 @@ app.post('/dealer/getSimCard' ,async function (req,res){
                 }).catch((err) => {
                     console.log(err);
                 });
-                res.render(success_user,{title:success,username});
+                res.render("success_user",{title:"success",username});
             }
         });
     }
@@ -463,7 +472,8 @@ app.post('/user/:userid/ChangeDetails' ,async function (req,res){
     }
 });
 app.get('/user/:username/services' ,async function (req,res){
-    res.render('services',{title:"Services"})
+    username = req.params.username;
+    res.render('services',{title:"Services",username})
 });
 
 
@@ -476,25 +486,17 @@ app.get('/user/:username/currentplan' ,async function (req,res){
 app.get('/user/:username/transactions' ,async function (req,res){
     // write code to return whole transation history
     var username = req.params.username;
-    let message = await query.query(null,"GetHistoryForAsset",username,"Org2");
+    let message = await query.query(username,"GetHistoryForAsset",username,"Org2");
     res.send(message)
     // res.render('transactions',{title:"Transactions"})
 });
 
 
-
 app.post('/user/:userid/services/BuyService' ,async function (req,res){
     try{
-        var password = req.body.password;
         var username = req.params.userid;
-        var pass_hash = SHA256(username+password)
-        if(JSON.stringify(user_hash_dict[username]["password_hash"]["words"]) !== JSON.stringify(pass_hash["words"]))
-        {
-            res.json({success: false, message: "Invalid Credentials" });
-            return;
-        }
         var args = {};
-        args["Service_name"] = req.body.Service_name;
+        args["Service_name"] = req.body.service_name;
         args["Price"] = req.body.Price;
         
         console.log(`Input is ${args}`)
