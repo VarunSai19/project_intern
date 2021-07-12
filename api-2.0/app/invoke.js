@@ -77,14 +77,13 @@ const invokeTransaction = async (fcn,username,args) => {
                 break;
             
             case "BuyService":
+                console.log(`User name is ${username}`)
+                console.log(`Service name is ${args["Service_name"]}`)
+                console.log(`Price is ${args["Price"]}`)
                 result = await contract.submitTransaction('SmartContract:'+fcn,username,args["Service_name"],args["Price"]);
                 result = {txid: result.toString()}
                 break;
-            // case "CreateAadharData":
-            // case "CreateDrivingLicenceData":
-            //     result = await contract.submitTransaction('SmartContract:'+fcn, JSON.stringify(args));
-            //     result = {txid: result.toString()}
-            //     break;
+                
             default:
                 break;
         }

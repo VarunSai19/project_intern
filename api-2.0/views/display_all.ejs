@@ -6,11 +6,12 @@
         <% for(var person of message) { %>
             <li>
                 <ul>
-                    <li><%= person["PhoneNumber"] %> </li>
-                    <li><%= person["Name"] %> </li>
-                    <li><%= person["AadharNumber"] %> </li>
-                    <li><%= person["Status"] %> </li>
-                    <li><%= person["Money"] %> </li>
+                    <li>PhoneNumber : <%= person["PhoneNumber"] %> </li>
+                    <li>Name :<%= person["Name"] %> </li>
+                    <li>AadharNumber :<%= person["AadharNumber"] %> </li>
+                    <li>Status : <%= person["Status"] %> </li>
+                    <li>Money: <%= person["Money"] %> </li>
+                    <br><br>
                 </ul>
             </li>
         <% } %>

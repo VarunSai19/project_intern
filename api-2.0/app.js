@@ -153,7 +153,7 @@ app.post('/Adminlogin', async function (req, res) {
             return;
         }
         var pass_hash = SHA256(username+password)
-        PasswordHash.findOne({"username":username},(err,data)=>{
+        PasswordHash.findOne({"username":username},async(err,data)=>{
             if(err)
             {
                 res.send(err);
@@ -271,7 +271,7 @@ app.post('/dealer/getSimCard' ,function (req,res){
         console.log(req.body.Gender);
 
         var actual_data;
-        Aadhar_Data.findOne({"AadharNumber":args["AadharNumber"]},(err,data)=>{
+        Aadhar_Data.findOne({"AadharNumber":args["AadharNumber"]},async (err,data)=>{
             if(err){
                 console.log(err);
             }
@@ -368,9 +368,8 @@ app.post('/Userlogin', async function (req, res) {
         res.json(getErrorMessage('\'Password\''));
         return;
     }
-    // This should be changed as per the file in GCP
     var pass_hash = SHA256(username+password)
-    PasswordHash.findOne({"username":username},(err,data)=>{
+    PasswordHash.findOne({"username":username},async (err,data)=>{
         if(err)
         {
             console.log(err);
@@ -429,7 +428,7 @@ app.post('/user/:userid/ChangeDetails' ,async function (req,res){
 
         // console.log(`Actual data is ${actual_data}`) 
 
-        Aadhar_Data.findOne({"AadharNumber":args["AadharNumber"]},(err,data)=>{
+        Aadhar_Data.findOne({"AadharNumber":args["AadharNumber"]},async(err,data)=>{
             if(err){
                 console.log(err);
             }
@@ -447,7 +446,7 @@ app.post('/user/:userid/ChangeDetails' ,async function (req,res){
                     res.send(response_payload)
                 }
                 console.log("Aadhar data present in the Database.")
-                const valid = helper.ValidateAadhar(actual_data,args);
+                const valid = await helper.ValidateAadhar(actual_data,args);
                 console.log(valid);
                 if(!valid)
                 {
@@ -460,11 +459,11 @@ app.post('/user/:userid/ChangeDetails' ,async function (req,res){
                     res.send(response_payload)
                 }
                 console.log("Aadhar data matched.")
-                let response = helper.Register(args["PhoneNumber"], password,"customer");
+                let response = await helper.Register(args["PhoneNumber"], password,"customer");
                 
                 console.log("User created...")
 
-                let message = invoke.invokeTransaction("CreateData",args["PhoneNumber"],args);
+                let message = await invoke.invokeTransaction("CreateData",args["PhoneNumber"],args);
                 console.log(`message result is : ${message}`)
 
                 const response_payload = {
@@ -513,7 +512,8 @@ app.post('/user/:userid/services/BuyService' ,async function (req,res){
         var args = {};
         args["Service_name"] = req.body.service_name;
         args["Price"] = req.body.Price;
-        
+        console.log(req.body.service_name);
+        console.log(req.body.Price);
         console.log(`Input is ${args}`)
 
         let message = await invoke.invokeTransaction("BuyService",username,args);

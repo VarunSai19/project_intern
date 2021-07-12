@@ -22,7 +22,7 @@ type TelcoData struct{
 	Name   string `json:"Name"`
 	PhoneNumber  string `json:"PhoneNumber"`
 	Status   string `json:"Status"`
-	Money uint64 `json:"Money"`
+	Money int64 `json:"Money"`
 	Doc_type string `json:"Doc_type"`
 }
 
@@ -106,8 +106,8 @@ func (s *SmartContract) BuyService(ctx contractapi.TransactionContextInterface, 
 		return "", fmt.Errorf("Insufficient amount in wallet.")
 	}
 	data := &ServiceData{
-		ServiceName:servicename
-		UserName: username+"_service"
+		ServiceName:servicename,
+		UserName: username+"_service",
 		Doc_type: "service",
 	}
 	
@@ -127,12 +127,12 @@ func (s *SmartContract) BuyService(ctx contractapi.TransactionContextInterface, 
 	asset.Money = asset.Money - Price;
 	asset.Status = "Active"
 
-	dataAsBytes, err := json.Marshal(asset)
+	dataAsBytes1, err := json.Marshal(asset)
 	if err != nil {
 		return "", fmt.Errorf("Failed while marshling Data. %s", err.Error())
 	}
 	
-	return ctx.GetStub().GetTxID(), ctx.GetStub().PutState(asset.PhoneNumber, dataAsBytes)
+	return ctx.GetStub().GetTxID(), ctx.GetStub().PutState(asset.PhoneNumber, dataAsBytes1)
 }
 
 func (s *SmartContract) ReadAsset(ctx contractapi.TransactionContextInterface, ID string) (*TelcoData, error) {
@@ -151,7 +151,7 @@ func (s *SmartContract) ReadAsset(ctx contractapi.TransactionContextInterface, I
 	data := new(TelcoData)
 	_ = json.Unmarshal(dataAsBytes, data)
 
-	return &data, nil
+	return data, nil
 }
 
 func (s *SmartContract) GetDataByPhoneNumber(ctx contractapi.TransactionContextInterface, ID string) (*TelcoData, error) {
@@ -242,19 +242,19 @@ func (s *SmartContract) GetSubmittingClientIdentity(ctx contractapi.TransactionC
 	if err != nil {
 		return "", fmt.Errorf("failed to base64 decode clientID: %v", err)
 	}
-	s := string(decodeID)
+	res := string(decodeID)
 	i:=0
 	id:=""
-	for ;i<len(s);i++{
-		if s[i] == '='{
+	for ;i<len(res);i++{
+		if res[i] == '='{
 			break	
 		}
 	}
-	for i=i+1;i<len(s);i++{
-		if s[i] == ','{
+	for i=i+1;i<len(res);i++{
+		if res[i] == ','{
 			break	
 		} 
-		id += string(s[i])
+		id += string(res[i])
 	} 
 	return id, nil
 }
