@@ -127,7 +127,7 @@ app.get('/Adminlogin', async function (req, res) {
 app.post('/Adminlogin', async function (req, res) {
     try{
         var username = req.body.username;
-        const user_present =await  helper.isUserRegistered(username,"Org1")
+        const user_present = await helper.isUserRegistered(username,"Org1")
         console.log(user_present);
         if(!user_present) 
         {
@@ -209,7 +209,8 @@ app.post('/admin/:username/GetCustomerByPhoneNumber', async function (req, res) 
             res.json(getErrorMessage('\'args\''));
             return;
         }
-        console.log('args==========', args);
+
+        console.log('args==========>', args);
 
         let message = await query.query(args, "GetDataByPhoneNumber",username,"Org1");
 
@@ -250,10 +251,9 @@ app.get('/dealer/getSimCard',function(req,res){
     res.render('dealer_page',{title:"New User"})
 });
 
-app.post('/dealer/getSimCard' ,function (req,res){
+app.post('/dealer/getSimCard' ,async function (req,res){
     try{
         var password = req.body.password;
-
         var args = {};
         args["AadharNumber"] = req.body.AadharNumber;
         args["Address"] = req.body.Address;
@@ -289,7 +289,7 @@ app.post('/dealer/getSimCard' ,function (req,res){
                     res.send(response_payload)
                 }
                 console.log("Aadhar data present in the Database.")
-                const valid = helper.ValidateAadhar(actual_data,args);
+                const valid = await helper.ValidateAadhar(actual_data,args);
                 console.log(valid);
                 if(!valid)
                 {
@@ -302,11 +302,11 @@ app.post('/dealer/getSimCard' ,function (req,res){
                     res.send(response_payload)
                 }
                 console.log("Aadhar data matched.")
-                let response = helper.Register(args["PhoneNumber"], password,"customer");
+                let response = await helper.Register(args["PhoneNumber"], password,"customer");
                 
                 console.log("User created...")
 
-                let message = invoke.invokeTransaction("CreateData",args["PhoneNumber"],args);
+                let message = await invoke.invokeTransaction("CreateData",args["PhoneNumber"],args);
                 console.log(message);
                 console.log(`message result is : ${message}`)
 
@@ -385,9 +385,7 @@ app.post('/Userlogin', async function (req, res) {
             }
         }
     });
-    
 });
-
 
 app.get('/user/:username' ,async function (req,res){
     var number = req.params.username;
@@ -396,6 +394,28 @@ app.get('/user/:username' ,async function (req,res){
 
 app.get('/user/:username/ChangeDetails' ,async function (req,res){
     res.render('request_change',{title:"Change Details"})
+});
+
+app.get('/user/:username/AddMoney' ,async function (req,res){
+    res.render('addMoney',{title:"Add Money"})
+});
+
+app.post('/user/:username/AddMoney' ,async function (req,res){
+    try{
+        var money = req.body.money;
+        var username = req.params.username;
+        var message = await invoke.invokeTransaction("AddMoney",username,money);
+        res.render('request_change',{title:"Change Details"})
+    }
+    catch(error)
+    {
+        const response_payload = {
+            result: null,
+            error: error.name,
+            errorData: error.message
+        }
+        res.send(response_payload)
+    }
 });
 
 app.post('/user/:userid/ChangeDetails' ,async function (req,res){

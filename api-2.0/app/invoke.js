@@ -47,6 +47,7 @@ const invokeTransaction = async (fcn,username,args) => {
 
         // Multiple smartcontract in one chaincode
         let result;
+        let err;
         let message;
 
         switch (fcn) {
@@ -80,10 +81,18 @@ const invokeTransaction = async (fcn,username,args) => {
                 console.log(`User name is ${username}`)
                 console.log(`Service name is ${args["Service_name"]}`)
                 console.log(`Price is ${args["Price"]}`)
-                result = await contract.submitTransaction('SmartContract:'+fcn,username,args["Service_name"],args["Price"]);
+                result,err = await contract.submitTransaction('SmartContract:'+fcn,username,args["Service_name"],args["Price"]);
+                console.log(err);
                 result = {txid: result.toString()}
                 break;
-                
+
+            case "AddMoney":
+                console.log(`User name is ${username}`)
+                console.log(`Money is ${args}`)
+                result,err = await contract.submitTransaction('SmartContract:'+fcn,username,args);
+                console.log(err);
+                result = {txid: result.toString()}
+                break;
             default:
                 break;
         }

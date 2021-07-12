@@ -9,10 +9,7 @@ const util = require('util');
 const mongoose = require('mongoose')
 const channelName = "mychannel"
 const chaincodeName = "fabcar"
-var user_hash_dict = {}
 
-// const Password = require('./models/schema_pass')
-// const Data = require('./models/schema_data')
 
 const getOrg = async (usertype) => {
     let org = null;
@@ -239,6 +236,5 @@ module.exports = {
     isUserRegistered: isUserRegistered,
     Register:Register,
     getOrg:getOrg,
-    ValidateAadhar:ValidateAadhar,
-    user_hash_dict:user_hash_dict
+    ValidateAadhar:ValidateAadhar
 }

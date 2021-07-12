@@ -89,6 +89,51 @@ func (s *SmartContract) CreateData(ctx contractapi.TransactionContextInterface, 
 	return ctx.GetStub().GetTxID(), ctx.GetStub().PutState(data.PhoneNumber, dataAsBytes)
 }
 
+func (s *SmartContract) ChangeData(ctx contractapi.TransactionContextInterface, Data string) error {
+	if len(Data) == 0 {
+		return "", fmt.Errorf("Please pass the correct data")
+	}
+
+	var newdata TelcoData
+	err := json.Unmarshal([]byte(Data), &data)
+	if err != nil {
+		return "", fmt.Errorf("Failed while unmarshling Data. %s", err.Error())
+	}
+
+	data,err := s.ReadAsset(ctx,newdata.PhoneNumber)
+
+	data.AadharNumber = newdata.AadharNumber
+	data.Name = newdata.Name;
+
+	dataAsBytes, err := json.Marshal(data)
+	if err != nil {
+		return "", fmt.Errorf("Failed while marshling Data. %s", err.Error())
+	}
+
+	ctx.GetStub().SetEvent("CreateAsset", dataAsBytes)
+
+	return ctx.GetStub().GetTxID(), ctx.GetStub().PutState(data.PhoneNumber, dataAsBytes)
+}
+
+func (s *SmartContract) AddMoney(ctx contractapi.TransactionContextInterface, Id string,amount int64) (string, error) {
+	if len(Id) == 0 {
+		return "", fmt.Errorf("Please pass the correct data")
+	}
+	asset,err := s.ReadAsset(ctx,Id);
+
+	asset.Money = asset.Money + amount
+	asset.Status = "Active"
+
+	dataAsBytes, err := json.Marshal(asset)
+	if err != nil {
+		return "", fmt.Errorf("Failed while marshling Data. %s", err.Error())
+	}
+
+	ctx.GetStub().SetEvent("CreateAsset", dataAsBytes)
+
+	return ctx.GetStub().GetTxID(), ctx.GetStub().PutState(asset.PhoneNumber, dataAsBytes)
+}
+
 func (s *SmartContract) BuyService(ctx contractapi.TransactionContextInterface, username string,servicename string,price string) (string, error) {
 	if len(username) == 0 {
 		return "", fmt.Errorf("Please pass the correct data.")
@@ -105,6 +150,7 @@ func (s *SmartContract) BuyService(ctx contractapi.TransactionContextInterface, 
 	if asset.Money < Price {
 		return "", fmt.Errorf("Insufficient amount in wallet.")
 	}
+
 	data := &ServiceData{
 		ServiceName:servicename,
 		UserName: username+"_service",
@@ -224,7 +270,7 @@ func (s *SmartContract) GetHistoryForAsset(ctx contractapi.TransactionContextInt
 	return string(buffer.Bytes()), nil
 }
 
-func (s *SmartContract) DeleteDataByUserName(ctx contractapi.TransactionContextInterface, ID string) (string, error) {
+func (s *SmartContract) DeleteDataById(ctx contractapi.TransactionContextInterface, ID string) (string, error) {
 	if len(ID) == 0 {
 		return "", fmt.Errorf("Please provide correct contract Id")
 	}
