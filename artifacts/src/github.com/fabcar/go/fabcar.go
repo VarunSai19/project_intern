@@ -89,13 +89,13 @@ func (s *SmartContract) CreateData(ctx contractapi.TransactionContextInterface, 
 	return ctx.GetStub().GetTxID(), ctx.GetStub().PutState(data.PhoneNumber, dataAsBytes)
 }
 
-func (s *SmartContract) ChangeData(ctx contractapi.TransactionContextInterface, Data string) error {
+func (s *SmartContract) ChangeData(ctx contractapi.TransactionContextInterface, Data string) (string, error) {
 	if len(Data) == 0 {
 		return "", fmt.Errorf("Please pass the correct data")
 	}
 
 	var newdata TelcoData
-	err := json.Unmarshal([]byte(Data), &data)
+	err := json.Unmarshal([]byte(Data), &newdata)
 	if err != nil {
 		return "", fmt.Errorf("Failed while unmarshling Data. %s", err.Error())
 	}
