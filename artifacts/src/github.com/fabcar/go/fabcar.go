@@ -22,13 +22,14 @@ type TelcoData struct{
 	Name   string `json:"Name"`
 	PhoneNumber  string `json:"PhoneNumber"`
 	Status   string `json:"Status"`
+	Money uint64 `json:"Money"`
+	Doc_type string `json:"Doc_type"`
 }
 
-type HistoryQueryResult struct {
-	Record    *TelcoData    `json:"record"`
-	TxId     string    `json:"txId"`
-	Timestamp time.Time `json:"timestamp"`
-	IsDelete  bool      `json:"isDelete"`
+type ServiceData struct{
+	ServiceName   string `json:"ServiceName"`
+	UserName  string `json:"UserName"`
+	Doc_type string `json:"Doc_type"`
 }
 
 type AadharData struct {
@@ -72,12 +73,6 @@ func (s *SmartContract) CreateData(ctx contractapi.TransactionContextInterface, 
 	if len(Data) == 0 {
 		return "", fmt.Errorf("Please pass the correct data")
 	}
-	
-	// err1 := ctx.GetClientIdentity().AssertAttributeValue("usertype", "customer")
-	// if err1 != nil {
-	// 	return "",fmt.Errorf("submitting client not authorized to create asset.")
-	// }
-
 	var data TelcoData
 	err := json.Unmarshal([]byte(Data), &data)
 	if err != nil {
@@ -94,26 +89,76 @@ func (s *SmartContract) CreateData(ctx contractapi.TransactionContextInterface, 
 	return ctx.GetStub().GetTxID(), ctx.GetStub().PutState(data.PhoneNumber, dataAsBytes)
 }
 
+func (s *SmartContract) BuyService(ctx contractapi.TransactionContextInterface, username string,servicename string,price string) (string, error) {
+	if len(username) == 0 {
+		return "", fmt.Errorf("Please pass the correct data.")
+	}
+	Price, err := strconv.ParseInt(price, 10, 64)
+	if err!=nil{
+		return "", fmt.Errorf("Please price of product correctly.")
+	}
+
+	asset,err := s.ReadAsset(ctx,username);
+	if err!=nil{
+		return "", fmt.Errorf("Problem while reading the data.")
+	}
+	if asset.Money < Price {
+		return "", fmt.Errorf("Insufficient amount in wallet.")
+	}
+	data := &ServiceData{
+		ServiceName:servicename
+		UserName: username+"_service"
+		Doc_type: "service",
+	}
+	
+	dataAsBytes, err := json.Marshal(data)
+	if err != nil {
+		return "", fmt.Errorf("Failed while marshling Data. %s", err.Error())
+	}
+
+	ctx.GetStub().SetEvent("CreateAsset", dataAsBytes)
+
+	err = ctx.GetStub().PutState(data.UserName, dataAsBytes)
+
+	if err != nil {
+		return "",fmt.Errorf("Failed while pushing the transaction.")
+	}
+
+	asset.Money = asset.Money - Price;
+	asset.Status = "Active"
+
+	dataAsBytes, err := json.Marshal(asset)
+	if err != nil {
+		return "", fmt.Errorf("Failed while marshling Data. %s", err.Error())
+	}
+	
+	return ctx.GetStub().GetTxID(), ctx.GetStub().PutState(asset.PhoneNumber, dataAsBytes)
+}
+
+func (s *SmartContract) ReadAsset(ctx contractapi.TransactionContextInterface, ID string) (*TelcoData, error) {
+	if len(ID) == 0 {
+		return nil, fmt.Errorf("Please provide correct contract Id")
+	}
+	dataAsBytes, err := ctx.GetStub().GetState(ID)
+
+	if err != nil {
+		return nil, fmt.Errorf("Failed to read from world state. %s", err.Error())
+	}
+
+	if dataAsBytes == nil {
+		return nil, fmt.Errorf("%s does not exist", ID)
+	}
+	data := new(TelcoData)
+	_ = json.Unmarshal(dataAsBytes, data)
+
+	return &data, nil
+}
 
 func (s *SmartContract) GetDataByPhoneNumber(ctx contractapi.TransactionContextInterface, ID string) (*TelcoData, error) {
 	if len(ID) == 0 {
 		return nil, fmt.Errorf("Please provide correct contract Id")
 	}
-
-	// err := ctx.GetClientIdentity().AssertAttributeValue("usertype", "telco-admin")
-	clientID,err_id := s.GetSubmittingClientIdentity(ctx)
-
-	if err_id != nil{
-		return nil,err_id
-	}
-
-
-	// if err != nil {
-	// 	return "",fmt.Errorf("submitting client not authorized to create asset.")
-	// }
-
-	fmt.Print("Id of the user is ",clientID,"\n")
-
+	// clientID,err_id := s.GetSubmittingClientIdentity(ctx)
 	dataAsBytes, err := ctx.GetStub().GetState(ID)
 
 	if err != nil {
@@ -188,7 +233,7 @@ func (s *SmartContract) DeleteDataByUserName(ctx contractapi.TransactionContextI
 }
 
 func (s *SmartContract) GetSubmittingClientIdentity(ctx contractapi.TransactionContextInterface) (string, error) {
-
+	// x509::CN=telco-admin,OU=o 
 	b64ID, err := ctx.GetClientIdentity().GetID()
 	if err != nil {
 		return "", fmt.Errorf("Failed to read clientID: %v", err)
@@ -197,7 +242,21 @@ func (s *SmartContract) GetSubmittingClientIdentity(ctx contractapi.TransactionC
 	if err != nil {
 		return "", fmt.Errorf("failed to base64 decode clientID: %v", err)
 	}
-	return string(decodeID), nil
+	s := string(decodeID)
+	i:=0
+	id:=""
+	for ;i<len(s);i++{
+		if s[i] == '='{
+			break	
+		}
+	}
+	for i=i+1;i<len(s);i++{
+		if s[i] == ','{
+			break	
+		} 
+		id += string(s[i])
+	} 
+	return id, nil
 }
 
 

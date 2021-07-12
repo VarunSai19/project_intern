@@ -3,57 +3,10 @@
   <%- include('./partials/header.ejs') %> 
 <body>
   <ul>
-    <li id="one"><a href="user/<%= number%>/ChangeDetails">Request Change of Info</a></li>
-    <li id="two"><a href="user/<%= number%>/services">Services Offered</a></li>
-    <li id="three"><a href="user/<%= number%>/currentplan">Current Plan</a></li>
-    <li id="four"><a href="user/<%= number%>/transactions">All Transactions</a></li>
+    <li id="one"><a href="<%= number%>/ChangeDetails">Request Change of Info</a></li>
+    <li id="two"><a href="<%= number%>/services">Services Offered</a></li>
+    <li id="three"><a href="<%= number%>/currentplan">Current Plan</a></li>
+    <li id="four"><a href="<%= number%>/transactions">All Transactions</a></li>
   </ul>
-
-<div class="center" id ="request">
-  <h2>User Details</h2>
-  <form action="/action_page.php",method="POST">
-    <label for="name">Name (as per Aadhar):</label><br>
-    <input type="text" id="name" name="name"><br>
-    <br>
-    <label for="anumber">Aadhar Number:</label><br>
-      <input type="text" id="anumber" name="anumber"><br>
-    <br>
-    <label for="address">Address:</label><br>
-    <textarea id="Address" name="Address" rows="4" cols="50">
-      
-      </textarea><br>
-    <br>
-    <p>Gender:</p>
-      <input type="radio" id="gender1" name="gender" value="Male">
-      <label for="gender1">Male</label><br>
-      <input type="radio" id="gender2" name="gender" value="Female">
-      <label for="gender2">Female</label><br> 
-    <br>
-    <label for="dob">Date of Birth:</label><br>
-      <input type="date" id="dob" name="dob"><br>
-    <br>
-    <label for="pwd">Password:</label><br>
-      <input type="password" id="pwd" name="pwd"><br>
-    <br>
-    <label for="proof">Proof Document:</label><br>
-    <input type="file" id="proof" name="proof"><br>
-    <br>
-    <input type="button" class="button" value="Submit">
-</form> 
-</div>
-
-<div class="center" id ="services">
-  <h2>Services offered</h2>
-  
-</div>
-<div class="center" id ="currentplan">
-  <h2>Current Plan</h2>
-  
-</div>
-<div class="center" id ="transactions">
-  <h2>Transaction History</h2>
-  
-</div>
-
 </body>
 </html>

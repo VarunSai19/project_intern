@@ -44,7 +44,7 @@ const query = async (args, fcn, username, org_name) => {
                 break;
 
             case "QueryAllData": 
-                var query_string = {"selector":{}}
+                var query_string = {"selector":{"Doc_type":"info"}}
                 result = await contract.evaluateTransaction('SmartContract:'+fcn, JSON.stringify(query_string));
                 break;
 

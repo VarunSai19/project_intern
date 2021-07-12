@@ -58,7 +58,7 @@ const invokeTransaction = async (fcn,username,args) => {
                 new_args["PhoneNumber"] = args["PhoneNumber"];
                 new_args["Status"] = "inactive";
                 new_args["Money"] = 0;
-                new_args["Transaction_type"] = "info";
+                new_args["Doc_type"] = "info";
                 console.log(JSON.stringify(new_args));
                 result = await contract.submitTransaction('SmartContract:'+fcn, JSON.stringify(new_args));
                 result = {txid: result.toString()}
@@ -70,14 +70,14 @@ const invokeTransaction = async (fcn,username,args) => {
                 new_args["Name"] = args["Name"];
                 new_args["AadharNumber"] = args["AadharNumber"];
                 new_args["PhoneNumber"] = username;
-                new_args["Transaction_type"] = "info";
+                new_args["Doc_type"] = "info";
                 console.log(JSON.stringify(new_args));
                 result = await contract.submitTransaction('SmartContract:'+fcn, JSON.stringify(new_args));
                 result = {txid: result.toString()}
                 break;
             
             case "BuyService":
-                result = await contract.submitTransaction('SmartContract:'+fcn, args["Service_name"],args["Price"]);
+                result = await contract.submitTransaction('SmartContract:'+fcn,username,args["Service_name"],args["Price"]);
                 result = {txid: result.toString()}
                 break;
             // case "CreateAadharData":

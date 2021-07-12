@@ -169,7 +169,7 @@ const isUserRegistered = async (username, userOrg) => {
     }
 }
 
-const Register = (username,password,usertype) => {
+const Register = async (username,password,usertype) => {
     let userOrg = await getOrg(usertype)
     let ccp = await getCCP(userOrg)
     const caURL = await getCaUrl(userOrg, ccp)

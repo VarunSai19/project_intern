@@ -127,7 +127,8 @@ app.get('/Adminlogin', async function (req, res) {
 app.post('/Adminlogin', async function (req, res) {
     try{
         var username = req.body.username;
-        const user_present = helper.isUserRegistered(username,"Org1")
+        const user_present =await  helper.isUserRegistered(username,"Org1")
+        console.log(user_present);
         if(!user_present) 
         {
             console.log(`An identity for the user ${username} not exists`);
@@ -155,18 +156,28 @@ app.post('/Adminlogin', async function (req, res) {
         PasswordHash.findOne({"username":username},(err,data)=>{
             if(err)
             {
-                console.log(err);
+                res.send(err);
+                return;
             }
             else{
-                if(JSON.stringify(data["password_hash"]) !== JSON.stringify(pass_hash["words"]))
+                console.log(JSON.stringify(data["password_hash"]));
+                console.log(JSON.stringify(pass_hash["words"]));
+                if(data["password_hash"] === JSON.stringify(pass_hash["words"]))
                 {
-                    res.send({success: false, message: "Invalid Credentials" });
+                    var url_resp = "/admin/"+username;
+                    res.redirect(url_resp)
+                }
+                else{
+                    const response_payload = {
+                        result: null,
+                        error: "Invalid Credentials"
+                    }
+                    res.send(response_payload)
                 }
             }
         });
-        var url_resp = "/admin/"+username;
-        res.redirect(url_resp)
-    }catch (error) {
+    }
+    catch (error) {
         const response_payload = {
             result: null,
             error: error.name,
@@ -333,7 +344,7 @@ app.get('/Userlogin', async function (req, res) {
 app.post('/Userlogin', async function (req, res) {
     var username = req.body.username;
 
-    const user_present = helper.isUserRegistered(username,"Org2")
+    const user_present = await helper.isUserRegistered(username,"Org2")
     if(!user_present) 
     {
         console.log(`An identity for the user ${username} not exists`);
@@ -365,19 +376,23 @@ app.post('/Userlogin', async function (req, res) {
             console.log(err);
         }
         else{
-            if(JSON.stringify(data["password_hash"]) !== JSON.stringify(pass_hash["words"]))
+            if(data["password_hash"] === JSON.stringify(pass_hash["words"]))
             {
+                var url_new = '/user/'+username
+                res.redirect(url_new);
+            }
+            else{
                 res.send({success: false, message: "Invalid Credentials" });
             }
         }
     });
-    var url_new = '/user/'+username
-    res.redirect(url_new);
+    
 });
 
 
 app.get('/user/:username' ,async function (req,res){
-    res.render('user_page',{title:"User"})
+    var number = req.params.username;
+    res.render('user_page',{title:"User",number})
 });
 
 app.get('/user/:username/ChangeDetails' ,async function (req,res){
@@ -472,7 +487,7 @@ app.post('/user/:userid/ChangeDetails' ,async function (req,res){
     }
 });
 app.get('/user/:username/services' ,async function (req,res){
-    username = req.params.username;
+    var username = req.params.username;
     res.render('services',{title:"Services",username})
 });
 
