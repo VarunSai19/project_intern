@@ -28,7 +28,16 @@ type TelcoData struct{
 
 type ServiceData struct{
 	ServiceName   string `json:"ServiceName"`
+	ServicePrice int64 `json:"ServicePrice"`
 	UserName  string `json:"UserName"`
+	Doc_type string `json:"Doc_type"`
+}
+
+type TransactionData struct{
+	UserName  string `json:"UserName"`
+	To   string `json:"To"`
+	Amount  string `json:"Amount"`
+	Type string `json:"Type"`
 	Doc_type string `json:"Doc_type"`
 }
 
@@ -41,17 +50,6 @@ type AadharData struct {
 }
 
 type DrivingLicence struct {
-	LicenceNumber  string `json:"LicenceNumber"`
-	Address    string `json:"Address"`
-	DateOfBirth   string `json:"DateOfBirth"`
-	Name   string `json:"Name"`
-	Gender   string `json:"Gender"`
-	LicenceValidity   string `json:"LicenceValidity"`
-}
-
-type User_Data struct {
-	UserName   string `json:"UserName"`
-	AadharNumber   string `json:"AadharNumber"`
 	LicenceNumber  string `json:"LicenceNumber"`
 	Address    string `json:"Address"`
 	DateOfBirth   string `json:"DateOfBirth"`
@@ -89,77 +87,173 @@ func (s *SmartContract) CreateData(ctx contractapi.TransactionContextInterface, 
 	return ctx.GetStub().GetTxID(), ctx.GetStub().PutState(data.PhoneNumber, dataAsBytes)
 }
 
-func (s *SmartContract) ChangeData(ctx contractapi.TransactionContextInterface, Data string) (string, error) {
+func (s *SmartContract) ChangeData(ctx contractapi.TransactionContextInterface, Data string) error {
 	if len(Data) == 0 {
-		return "", fmt.Errorf("Please pass the correct data")
+		return fmt.Errorf("Please pass the correct data")
 	}
 
 	var newdata TelcoData
 	err := json.Unmarshal([]byte(Data), &newdata)
 	if err != nil {
-		return "", fmt.Errorf("Failed while unmarshling Data. %s", err.Error())
+		return fmt.Errorf("Failed while unmarshling Data. %s", err.Error())
 	}
 
 	data,err := s.ReadAsset(ctx,newdata.PhoneNumber)
-
+	if err!=nil{
+		return fmt.Errorf("Problem while reading the data.")
+	}
 	data.AadharNumber = newdata.AadharNumber
 	data.Name = newdata.Name;
 
 	dataAsBytes, err := json.Marshal(data)
 	if err != nil {
-		return "", fmt.Errorf("Failed while marshling Data. %s", err.Error())
+		return fmt.Errorf("Failed while marshling Data. %s", err.Error())
 	}
 
-	ctx.GetStub().SetEvent("CreateAsset", dataAsBytes)
-
-	return ctx.GetStub().GetTxID(), ctx.GetStub().PutState(data.PhoneNumber, dataAsBytes)
+	return ctx.GetStub().PutState(data.PhoneNumber, dataAsBytes)
 }
 
-func (s *SmartContract) AddMoney(ctx contractapi.TransactionContextInterface, Id string,amount int64) (string, error) {
+func (s *SmartContract) AddMoney(ctx contractapi.TransactionContextInterface, Id string,amount int64) error {
 	if len(Id) == 0 {
-		return "", fmt.Errorf("Please pass the correct data")
+		return fmt.Errorf("Please pass the correct data")
 	}
 	asset,err := s.ReadAsset(ctx,Id);
-
+	if err!=nil{
+		return fmt.Errorf("Problem while reading the data.")
+	}
 	asset.Money = asset.Money + amount
 	asset.Status = "Active"
 
 	dataAsBytes, err := json.Marshal(asset)
 	if err != nil {
-		return "", fmt.Errorf("Failed while marshling Data. %s", err.Error())
+		return fmt.Errorf("Failed while marshling Data. %s", err.Error())
 	}
 
-	ctx.GetStub().SetEvent("CreateAsset", dataAsBytes)
+	ctx.GetStub().PutState(asset.PhoneNumber, dataAsBytes)
 
-	return ctx.GetStub().GetTxID(), ctx.GetStub().PutState(asset.PhoneNumber, dataAsBytes)
+	data := &TransactionData{
+		UserName: username+"_transaction",
+		To:"Self",
+		Amount:amount,
+		Type:"Credit",
+		Doc_type: "transaction",
+	}
+
+	transAsBytes, err := json.Marshal(data)
+
+	if err != nil {
+		return fmt.Errorf("Failed while marshling Data. %s", err.Error())
+	}
+
+	// ctx.GetStub().SetEvent("CreateAsset", dataAsBytes)
+
+	return ctx.GetStub().PutState(data.UserName, transAsBytes)
 }
 
-func (s *SmartContract) BuyService(ctx contractapi.TransactionContextInterface, username string,servicename string,price string) (string, error) {
+func (s *SmartContract) SendMoney(ctx contractapi.TransactionContextInterface, Id1 string,Id2 string,amount int64) error {
+	if len(Id) == 0 {
+		return fmt.Errorf("Please pass the correct data")
+	}
+	asset1,err := s.ReadAsset(ctx,Id1);
+	if err!=nil{
+		return fmt.Errorf("Problem while reading the data.")
+	}
+	if asset1.Money < amount {
+		return fmt.Errorf("Insufficient amount in wallet.")
+	}
+
+	asset2,err := s.ReadAsset(ctx,Id2);
+	if err!=nil{
+		return fmt.Errorf("Problem while reading the data.")
+	}
+	asset1.Money = asset1.Money - amount
+	asset2.Money = asset2.Money + amount
+	asset2.Status = "Active"
+
+	dataAsBytes, err := json.Marshal(asset1)
+	if err != nil {
+		return fmt.Errorf("Failed while marshling Data. %s", err.Error())
+	}
+
+	ctx.GetStub().PutState(asset1.PhoneNumber, dataAsBytes)
+
+	dataAsBytes1, err := json.Marshal(asset2)
+	if err != nil {
+		asset1.Money = asset1.Money + amount
+
+		dataAsBytes3, err := json.Marshal(asset1)
+		if err != nil {
+			return fmt.Errorf("Failed while marshling Data. %s", err.Error())
+		}
+
+		ctx.GetStub().PutState(asset1.PhoneNumber, dataAsBytes3)
+		return fmt.Errorf("Failed while marshling Data. %s", err.Error())
+	}
+
+	ctx.GetStub().PutState(asset2.PhoneNumber, dataAsBytes1)
+
+	data1 := &TransactionData{
+		UserName: asset1.PhoneNumber+"_transaction",
+		To:asset2.PhoneNumber,
+		Amount:amount,
+		Type:"Debit"
+		Doc_type: "transaction",
+	}
+
+	transAsBytes1, err := json.Marshal(data1)
+
+	if err != nil {
+		return fmt.Errorf("Failed while marshling Data. %s", err.Error())
+	}
+
+	ctx.GetStub().PutState(data1.UserName, transAsBytes1)
+
+	data2 := &TransactionData{
+		UserName: asset2.PhoneNumber+"_transaction",
+		To:asset1.PhoneNumber,
+		Amount:amount,
+		Type:"Credit"
+		Doc_type: "transaction",
+	}
+
+	transAsBytes2, err := json.Marshal(data2)
+
+	if err != nil {
+		return fmt.Errorf("Failed while marshling Data. %s", err.Error())
+	}
+
+	// ctx.GetStub().SetEvent("CreateAsset", dataAsBytes)
+
+	return ctx.GetStub().PutState(data2.UserName, transAsBytes2)
+}
+
+func (s *SmartContract) BuyService(ctx contractapi.TransactionContextInterface, username string,servicename string,price string) error {
 	if len(username) == 0 {
-		return "", fmt.Errorf("Please pass the correct data.")
+		return fmt.Errorf("Please pass the correct data.")
 	}
 	Price, err := strconv.ParseInt(price, 10, 64)
 	if err!=nil{
-		return "", fmt.Errorf("Please price of product correctly.")
+		return fmt.Errorf("Please price of product correctly.")
 	}
 
 	asset,err := s.ReadAsset(ctx,username);
 	if err!=nil{
-		return "", fmt.Errorf("Problem while reading the data.")
+		return fmt.Errorf("Problem while reading the data.")
 	}
 	if asset.Money < Price {
-		return "", fmt.Errorf("Insufficient amount in wallet.")
+		return fmt.Errorf("Insufficient amount in wallet.")
 	}
 
 	data := &ServiceData{
 		ServiceName:servicename,
 		UserName: username+"_service",
+		ServicePrice:Price,
 		Doc_type: "service",
 	}
 	
 	dataAsBytes, err := json.Marshal(data)
 	if err != nil {
-		return "", fmt.Errorf("Failed while marshling Data. %s", err.Error())
+		return fmt.Errorf("Failed while marshling Data. %s", err.Error())
 	}
 
 	ctx.GetStub().SetEvent("CreateAsset", dataAsBytes)
@@ -167,7 +261,7 @@ func (s *SmartContract) BuyService(ctx contractapi.TransactionContextInterface, 
 	err = ctx.GetStub().PutState(data.UserName, dataAsBytes)
 
 	if err != nil {
-		return "",fmt.Errorf("Failed while pushing the transaction.")
+		return fmt.Errorf("Failed while pushing the transaction.")
 	}
 
 	asset.Money = asset.Money - Price;
@@ -175,10 +269,10 @@ func (s *SmartContract) BuyService(ctx contractapi.TransactionContextInterface, 
 
 	dataAsBytes1, err := json.Marshal(asset)
 	if err != nil {
-		return "", fmt.Errorf("Failed while marshling Data. %s", err.Error())
+		return fmt.Errorf("Failed while marshling Data. %s", err.Error())
 	}
 	
-	return ctx.GetStub().GetTxID(), ctx.GetStub().PutState(asset.PhoneNumber, dataAsBytes1)
+	return ctx.GetStub().PutState(asset.PhoneNumber, dataAsBytes1)
 }
 
 func (s *SmartContract) ReadAsset(ctx contractapi.TransactionContextInterface, ID string) (*TelcoData, error) {
@@ -306,7 +400,7 @@ func (s *SmartContract) GetSubmittingClientIdentity(ctx contractapi.TransactionC
 }
 
 
-func (s *SmartContract) getQueryResultForQueryString(ctx contractapi.TransactionContextInterface, queryString string) ([]TelcoData, error) {
+func (s *SmartContract) getQueryResultForQueryString(ctx contractapi.TransactionContextInterface, queryString string,query string) ([]TelcoData, error) {
 
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
 	if err != nil {
@@ -321,8 +415,16 @@ func (s *SmartContract) getQueryResultForQueryString(ctx contractapi.Transaction
 		if err != nil {
 			return nil, err
 		}
-
-		newData := new(TelcoData)
+		if query=="Info"{
+			newData := new(TelcoData)
+		}
+		if query=="service" {
+			newData := new(ServiceData)
+		}
+		if query=="transaction" {
+			newData := new(TransactionData)
+		}
+		
 		fmt.Print("Responce is ",response.Value,"\n")
 		err = json.Unmarshal(response.Value, newData)
 		if err == nil {
@@ -338,7 +440,25 @@ func (s *SmartContract) QueryAllData(ctx contractapi.TransactionContextInterface
 		return nil,fmt.Errorf("submitting client not authorized to perform this task.")
 	}
 
-	return s.getQueryResultForQueryString(ctx,queryString)
+	return s.getQueryResultForQueryString(ctx,queryString,"info")
+}
+
+func (s *SmartContract) QueryAllServices(ctx contractapi.TransactionContextInterface, queryString string) ([]ServiceData, error) {
+	err := ctx.GetClientIdentity().AssertAttributeValue("usertype", "telco-admin")
+	if err != nil {
+		return nil,fmt.Errorf("submitting client not authorized to perform this task.")
+	}
+
+	return s.getQueryResultForQueryString(ctx,queryString,"service")
+}
+
+func (s *SmartContract) QueryAllTransactions(ctx contractapi.TransactionContextInterface, queryString string) ([]TransactionData, error) {
+	err := ctx.GetClientIdentity().AssertAttributeValue("usertype", "telco-admin")
+	if err != nil {
+		return nil,fmt.Errorf("submitting client not authorized to perform this task.")
+	}
+
+	return s.getQueryResultForQueryString(ctx,queryString,"transaction")
 }
 
 

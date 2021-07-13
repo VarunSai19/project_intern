@@ -73,26 +73,24 @@ const invokeTransaction = async (fcn,username,args) => {
                 new_args["PhoneNumber"] = username;
                 new_args["Doc_type"] = "info";
                 console.log(JSON.stringify(new_args));
-                result = await contract.submitTransaction('SmartContract:'+fcn, JSON.stringify(new_args));
-                result = {txid: result.toString()}
-                break;
+                err = await contract.submitTransaction('SmartContract:'+fcn, JSON.stringify(new_args));
+                return;
             
             case "BuyService":
                 console.log(`User name is ${username}`)
                 console.log(`Service name is ${args["Service_name"]}`)
                 console.log(`Price is ${args["Price"]}`)
-                result,err = await contract.submitTransaction('SmartContract:'+fcn,username,args["Service_name"],args["Price"]);
+                err = await contract.submitTransaction('SmartContract:'+fcn,username,args["Service_name"],args["Price"]);
                 console.log(err);
-                result = {txid: result.toString()}
-                break;
+                return;
 
             case "AddMoney":
                 console.log(`User name is ${username}`)
                 console.log(`Money is ${args}`)
-                result,err = await contract.submitTransaction('SmartContract:'+fcn,username,args);
+                err = await contract.submitTransaction('SmartContract:'+fcn,username,args);
                 console.log(err);
-                result = {txid: result.toString()}
-                break;
+                return;
+                
             default:
                 break;
         }

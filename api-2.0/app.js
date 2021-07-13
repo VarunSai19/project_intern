@@ -17,7 +17,6 @@ const host = process.env.HOST || constants.host;
 const port = process.env.PORT || constants.port;
 
 const helper = require('./app/helper')
-var user_hash_dict = require('./app/helper').user_hash_dict
 const invoke = require('./app/invoke')
 const qscc = require('./app/qscc')
 const query = require('./app/query')
@@ -226,8 +225,6 @@ app.post('/admin/:username/GetCustomerByPhoneNumber', async function (req, res) 
     }
 });
 
-
-
 app.get('/admin/:username/GetAllCustomers', async function (req, res) {
     try {
         logger.debug('==================== QUERY BY CHAINCODE ==================');
@@ -244,6 +241,45 @@ app.get('/admin/:username/GetAllCustomers', async function (req, res) {
             errorData: error.message
         }
         res.send(response_payload)
+    }
+});
+
+app.get('/admin/:username/GetAllServices', async function (req, res) {
+    try {
+        logger.debug('==================== QUERY BY CHAINCODE ==================');
+        
+        let username = req.params.username
+        let message = await query.query(null,"QueryAllServices",username,"Org1");
+
+        res.render('display_all_services',{title:"All Service Details",message});
+
+    } catch (error) {
+        const response_payload = {
+            result: null,
+            error: error.name,
+            errorData: error.message
+        }
+        res.send(response_payload)
+    }
+});
+
+app.get('/admin/:username/GetAllTransactions', async function (req, res) {
+    try {
+        logger.debug('==================== QUERY BY CHAINCODE ==================');
+        
+        let username = req.params.username
+        let message = await query.query(null,"QueryAllTransactions",username,"Org1");
+
+        res.render('display_all_transactions',{title:"All Transaction Details",message});
+
+    } catch (error) {
+        const response_payload = {
+            result: null,
+            error: error.name,
+            errorData: error.message
+        }
+        res.send(response_payload)
+        
     }
 });
 
@@ -392,10 +428,6 @@ app.get('/user/:username' ,async function (req,res){
     res.render('user_page',{title:"User",number})
 });
 
-app.get('/user/:username/ChangeDetails' ,async function (req,res){
-    res.render('request_change',{title:"Change Details"})
-});
-
 app.get('/user/:username/AddMoney' ,async function (req,res){
     res.render('addMoney',{title:"Add Money"})
 });
@@ -404,8 +436,8 @@ app.post('/user/:username/AddMoney' ,async function (req,res){
     try{
         var money = req.body.money;
         var username = req.params.username;
-        var message = await invoke.invokeTransaction("AddMoney",username,money);
-        res.render('request_change',{title:"Change Details"})
+        await invoke.invokeTransaction("AddMoney",username,money);
+        res.redirect('/user/${username}')
     }
     catch(error)
     {
@@ -416,6 +448,33 @@ app.post('/user/:username/AddMoney' ,async function (req,res){
         }
         res.send(response_payload)
     }
+});
+
+app.get('/user/:username/sendMoney' ,async function (req,res){
+    var username = req.params.username;
+    res.render('send_money',{title:"Send Money",username})
+});
+
+app.post('/user/:username/sendMoney' ,async function (req,res){
+    try{
+        var from = req.body.from;
+        var to = req.body.to;
+        var amount = req.body.money;
+        
+    }
+    catch(error)
+    {
+        const response_payload = {
+            result: null,
+            error: error.name,
+            errorData: error.message
+        }
+        res.send(response_payload)
+    }
+});
+
+app.get('/user/:username/ChangeDetails' ,async function (req,res){
+    res.render('request_change',{title:"Change Details"})
 });
 
 app.post('/user/:userid/ChangeDetails' ,async function (req,res){
@@ -483,15 +542,14 @@ app.post('/user/:userid/ChangeDetails' ,async function (req,res){
                 
                 console.log("User created...")
 
-                let message = await invoke.invokeTransaction("CreateData",args["PhoneNumber"],args);
-                console.log(`message result is : ${message}`)
-
+                await invoke.invokeTransaction("CreateData",args["PhoneNumber"],args);
+                
                 const response_payload = {
-                    TransactionID: message,
                     result:"Successful",
                     error: null,
                     errorData: null
                 }
+                res.send(response_payload);
             }
         });
     }
@@ -505,11 +563,11 @@ app.post('/user/:userid/ChangeDetails' ,async function (req,res){
         res.send(response_payload)
     }
 });
+
 app.get('/user/:username/services' ,async function (req,res){
     var username = req.params.username;
     res.render('services',{title:"Services",username})
 });
-
 
 
 app.get('/user/:username/currentplan' ,async function (req,res){
@@ -520,24 +578,37 @@ app.get('/user/:username/currentplan' ,async function (req,res){
 app.get('/user/:username/transactions' ,async function (req,res){
     // write code to return whole transation history
     var username = req.params.username;
-    let message = await query.query(username,"GetHistoryForAsset",username,"Org2");
-    res.send(message)
-    // res.render('transactions',{title:"Transactions"})
+    // let message = await query.query(username,"GetHistoryForAsset",username,"Org2");
+    // res.send(message)
+    res.render('transactions',{title:"Transactions",username});
 });
 
+app.get('/user/:username/transactions/services' ,async function (req,res){
+    // write code to return whole transation history
+    var username = req.params.username;
+    let message = await query.query(username+"_service","GetHistoryForAsset",username,"Org2");
+    res.send(message)
+    // res.render('transactions',{title:"Transactions",username});
+});
+
+app.get('/user/:username/transactions/payments' ,async function (req,res){
+    var username = req.params.username;
+    let message = await query.query(username+"_transaction","GetHistoryForAsset",username,"Org2");
+    res.send(message)
+    // res.render('transactions',{title:"Transactions",username});
+});
 
 app.post('/user/:userid/services/BuyService' ,async function (req,res){
     try{
         var username = req.params.userid;
         var args = {};
         args["Service_name"] = req.body.service_name;
-        args["Price"] = req.body.Price;
+        args["Price"] = req.body.price;
         console.log(req.body.service_name);
-        console.log(req.body.Price);
+        console.log(req.body.price);
         console.log(`Input is ${args}`)
 
-        let message = await invoke.invokeTransaction("BuyService",username,args);
-        console.log(`message result is : ${message}`)
+        await invoke.invokeTransaction("BuyService",username,args);
 
         const response_payload = {
             result: message,
