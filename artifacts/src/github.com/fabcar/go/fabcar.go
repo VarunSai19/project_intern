@@ -36,7 +36,7 @@ type ServiceData struct{
 type TransactionData struct{
 	UserName  string `json:"UserName"`
 	To   string `json:"To"`
-	Amount  string `json:"Amount"`
+	Amount  int64 `json:"Amount"`
 	Type string `json:"Type"`
 	Doc_type string `json:"Doc_type"`
 }
@@ -132,7 +132,7 @@ func (s *SmartContract) AddMoney(ctx contractapi.TransactionContextInterface, Id
 	ctx.GetStub().PutState(asset.PhoneNumber, dataAsBytes)
 
 	data := &TransactionData{
-		UserName: username+"_transaction",
+		UserName: Id+"_transaction",
 		To:"Self",
 		Amount:amount,
 		Type:"Credit",
@@ -151,7 +151,7 @@ func (s *SmartContract) AddMoney(ctx contractapi.TransactionContextInterface, Id
 }
 
 func (s *SmartContract) SendMoney(ctx contractapi.TransactionContextInterface, Id1 string,Id2 string,amount int64) error {
-	if len(Id) == 0 {
+	if len(Id1) == 0 || len(Id2) == 0{
 		return fmt.Errorf("Please pass the correct data")
 	}
 	asset1,err := s.ReadAsset(ctx,Id1);
@@ -196,7 +196,7 @@ func (s *SmartContract) SendMoney(ctx contractapi.TransactionContextInterface, I
 		UserName: asset1.PhoneNumber+"_transaction",
 		To:asset2.PhoneNumber,
 		Amount:amount,
-		Type:"Debit"
+		Type:"Debit",
 		Doc_type: "transaction",
 	}
 
@@ -212,7 +212,7 @@ func (s *SmartContract) SendMoney(ctx contractapi.TransactionContextInterface, I
 		UserName: asset2.PhoneNumber+"_transaction",
 		To:asset1.PhoneNumber,
 		Amount:amount,
-		Type:"Credit"
+		Type:"Credit",
 		Doc_type: "transaction",
 	}
 
@@ -400,14 +400,13 @@ func (s *SmartContract) GetSubmittingClientIdentity(ctx contractapi.TransactionC
 }
 
 
-func (s *SmartContract) getQueryResultForQueryString(ctx contractapi.TransactionContextInterface, queryString string,query string) ([]TelcoData, error) {
-
+func (s *SmartContract) getQueryResultForQueryStringData(ctx contractapi.TransactionContextInterface, queryString string) ([]TelcoData, error) {
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
 	if err != nil {
 		return nil, err
 	}
 	defer resultsIterator.Close()
-
+	
 	results := []TelcoData{}
 
 	for resultsIterator.HasNext() {
@@ -415,15 +414,7 @@ func (s *SmartContract) getQueryResultForQueryString(ctx contractapi.Transaction
 		if err != nil {
 			return nil, err
 		}
-		if query=="Info"{
-			newData := new(TelcoData)
-		}
-		if query=="service" {
-			newData := new(ServiceData)
-		}
-		if query=="transaction" {
-			newData := new(TransactionData)
-		}
+		newData := new(TelcoData)
 		
 		fmt.Print("Responce is ",response.Value,"\n")
 		err = json.Unmarshal(response.Value, newData)
@@ -440,7 +431,33 @@ func (s *SmartContract) QueryAllData(ctx contractapi.TransactionContextInterface
 		return nil,fmt.Errorf("submitting client not authorized to perform this task.")
 	}
 
-	return s.getQueryResultForQueryString(ctx,queryString,"info")
+	return s.getQueryResultForQueryStringData(ctx,queryString)
+}
+
+func (s *SmartContract) getQueryResultForQueryStringService(ctx contractapi.TransactionContextInterface, queryString string) ([]ServiceData, error) {
+
+	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	if err != nil {
+		return nil, err
+	}
+	defer resultsIterator.Close()
+	
+	results := []ServiceData{}
+
+	for resultsIterator.HasNext() {
+		response, err := resultsIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+		newData := new(ServiceData)
+		
+		fmt.Print("Responce is ",response.Value,"\n")
+		err = json.Unmarshal(response.Value, newData)
+		if err == nil {
+			results = append(results, *newData)
+		}
+	}
+	return results, nil
 }
 
 func (s *SmartContract) QueryAllServices(ctx contractapi.TransactionContextInterface, queryString string) ([]ServiceData, error) {
@@ -449,7 +466,32 @@ func (s *SmartContract) QueryAllServices(ctx contractapi.TransactionContextInter
 		return nil,fmt.Errorf("submitting client not authorized to perform this task.")
 	}
 
-	return s.getQueryResultForQueryString(ctx,queryString,"service")
+	return s.getQueryResultForQueryStringService(ctx,queryString)
+}
+
+func (s *SmartContract) getQueryResultForTransaction(ctx contractapi.TransactionContextInterface, queryString string) ([]TransactionData, error) {
+	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	if err != nil {
+		return nil, err
+	}
+	defer resultsIterator.Close()
+	
+	results := []TransactionData{}
+
+	for resultsIterator.HasNext() {
+		response, err := resultsIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+		newData := new(TransactionData)
+		
+		fmt.Print("Responce is ",response.Value,"\n")
+		err = json.Unmarshal(response.Value, newData)
+		if err == nil {
+			results = append(results, *newData)
+		}
+	}
+	return results, nil
 }
 
 func (s *SmartContract) QueryAllTransactions(ctx contractapi.TransactionContextInterface, queryString string) ([]TransactionData, error) {
@@ -458,7 +500,7 @@ func (s *SmartContract) QueryAllTransactions(ctx contractapi.TransactionContextI
 		return nil,fmt.Errorf("submitting client not authorized to perform this task.")
 	}
 
-	return s.getQueryResultForQueryString(ctx,queryString,"transaction")
+	return s.getQueryResultForTransaction(ctx,queryString)
 }
 
 
