@@ -27,6 +27,7 @@ type TelcoData struct{
 }
 
 type ServiceData struct{
+	PhoneNumber string `json:"PhoneNumber"`
 	ServiceName   string `json:"ServiceName"`
 	ServicePrice int64 `json:"ServicePrice"`
 	UserName  string `json:"UserName"`
@@ -35,6 +36,7 @@ type ServiceData struct{
 
 type TransactionData struct{
 	UserName  string `json:"UserName"`
+	From string `json:"From"`
 	To   string `json:"To"`
 	Amount  int64 `json:"Amount"`
 	Type string `json:"Type"`
@@ -129,13 +131,17 @@ func (s *SmartContract) AddMoney(ctx contractapi.TransactionContextInterface, Id
 		return fmt.Errorf("Failed while marshling Data. %s", err.Error())
 	}
 
-	ctx.GetStub().PutState(asset.PhoneNumber, dataAsBytes)
+	err = ctx.GetStub().PutState(asset.PhoneNumber, dataAsBytes)
+	if err != nil {
+		return err
+	}
 
 	data := &TransactionData{
 		UserName: Id+"_transaction",
-		To:"Self",
+		From:Id,
+		To:Id,
 		Amount:amount,
-		Type:"Credit",
+		Type:"Self",
 		Doc_type: "transaction",
 	}
 
@@ -175,7 +181,10 @@ func (s *SmartContract) SendMoney(ctx contractapi.TransactionContextInterface, I
 		return fmt.Errorf("Failed while marshling Data. %s", err.Error())
 	}
 
-	ctx.GetStub().PutState(asset1.PhoneNumber, dataAsBytes)
+	err = ctx.GetStub().PutState(asset1.PhoneNumber, dataAsBytes)
+	if err != nil {
+		return err
+	}
 
 	dataAsBytes1, err := json.Marshal(asset2)
 	if err != nil {
@@ -186,14 +195,21 @@ func (s *SmartContract) SendMoney(ctx contractapi.TransactionContextInterface, I
 			return fmt.Errorf("Failed while marshling Data. %s", err.Error())
 		}
 
-		ctx.GetStub().PutState(asset1.PhoneNumber, dataAsBytes3)
+		err = ctx.GetStub().PutState(asset1.PhoneNumber, dataAsBytes3)
+		if err != nil {
+			return err
+		}
 		return fmt.Errorf("Failed while marshling Data. %s", err.Error())
 	}
 
-	ctx.GetStub().PutState(asset2.PhoneNumber, dataAsBytes1)
+	err = ctx.GetStub().PutState(asset2.PhoneNumber, dataAsBytes1)
+	if err != nil {
+		return err
+	}
 
 	data1 := &TransactionData{
 		UserName: asset1.PhoneNumber+"_transaction",
+		From:asset1.PhoneNumber,
 		To:asset2.PhoneNumber,
 		Amount:amount,
 		Type:"Debit",
@@ -206,10 +222,14 @@ func (s *SmartContract) SendMoney(ctx contractapi.TransactionContextInterface, I
 		return fmt.Errorf("Failed while marshling Data. %s", err.Error())
 	}
 
-	ctx.GetStub().PutState(data1.UserName, transAsBytes1)
+	err = ctx.GetStub().PutState(data1.UserName, transAsBytes1)
+	if err != nil {
+		return err
+	}
 
 	data2 := &TransactionData{
 		UserName: asset2.PhoneNumber+"_transaction",
+		From:asset2.PhoneNumber,
 		To:asset1.PhoneNumber,
 		Amount:amount,
 		Type:"Credit",
@@ -245,6 +265,7 @@ func (s *SmartContract) BuyService(ctx contractapi.TransactionContextInterface, 
 	}
 
 	data := &ServiceData{
+		PhoneNumber:username,
 		ServiceName:servicename,
 		UserName: username+"_service",
 		ServicePrice:Price,
@@ -259,7 +280,6 @@ func (s *SmartContract) BuyService(ctx contractapi.TransactionContextInterface, 
 	ctx.GetStub().SetEvent("CreateAsset", dataAsBytes)
 
 	err = ctx.GetStub().PutState(data.UserName, dataAsBytes)
-
 	if err != nil {
 		return fmt.Errorf("Failed while pushing the transaction.")
 	}
@@ -400,7 +420,7 @@ func (s *SmartContract) GetSubmittingClientIdentity(ctx contractapi.TransactionC
 }
 
 
-func (s *SmartContract) getQueryResultForQueryStringData(ctx contractapi.TransactionContextInterface, queryString string) ([]TelcoData, error) {
+func (s *SmartContract) getQueryResultData(ctx contractapi.TransactionContextInterface, queryString string) ([]TelcoData, error) {
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
 	if err != nil {
 		return nil, err
@@ -431,10 +451,10 @@ func (s *SmartContract) QueryAllData(ctx contractapi.TransactionContextInterface
 		return nil,fmt.Errorf("submitting client not authorized to perform this task.")
 	}
 
-	return s.getQueryResultForQueryStringData(ctx,queryString)
+	return s.getQueryResultData(ctx,queryString)
 }
 
-func (s *SmartContract) getQueryResultForQueryStringService(ctx contractapi.TransactionContextInterface, queryString string) ([]ServiceData, error) {
+func (s *SmartContract) getQueryResultService(ctx contractapi.TransactionContextInterface, queryString string) ([]ServiceData, error) {
 
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
 	if err != nil {
@@ -466,7 +486,7 @@ func (s *SmartContract) QueryAllServices(ctx contractapi.TransactionContextInter
 		return nil,fmt.Errorf("submitting client not authorized to perform this task.")
 	}
 
-	return s.getQueryResultForQueryStringService(ctx,queryString)
+	return s.getQueryResultService(ctx,queryString)
 }
 
 func (s *SmartContract) getQueryResultForTransaction(ctx contractapi.TransactionContextInterface, queryString string) ([]TransactionData, error) {

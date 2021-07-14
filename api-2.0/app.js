@@ -437,7 +437,7 @@ app.post('/user/:username/AddMoney' ,async function (req,res){
         var money = req.body.money;
         var username = req.params.username;
         await invoke.invokeTransaction("AddMoney",username,money);
-        res.redirect('/user/${username}')
+        res.redirect(`/user/${username}`)
     }
     catch(error)
     {
@@ -457,10 +457,14 @@ app.get('/user/:username/sendMoney' ,async function (req,res){
 
 app.post('/user/:username/sendMoney' ,async function (req,res){
     try{
-        var from = req.body.from;
-        var to = req.body.to;
-        var amount = req.body.money;
-        
+        var username = req.params.username;
+        var args = {};
+        args["to"] = req.body.to;
+        args["amount"] = req.body.money;
+        console.log(from);
+        console.log(args["to"]);
+        console.log(args["amount"]);
+        await invoke.invokeTransaction("SendMoney",username,args);
     }
     catch(error)
     {
@@ -621,9 +625,7 @@ app.post('/user/:userid/services/BuyService' ,async function (req,res){
     catch(error)
     {
         const response_payload = {
-            result: null,
-            error: error.name,
-            errorData: error.message
+            result: "The Transaction Failed. Please check the wallet ammount before purchasing the service",
         }
         res.send(response_payload)
     }

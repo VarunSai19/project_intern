@@ -30,6 +30,14 @@ const invokeTransaction = async (fcn,username,args) => {
             return;
         }
 
+        if(fcn == "SendMoney") {
+            let identity2 = await wallet.get(args["to"]);
+            if (!identity2) {
+                console.log(`An identity for the user ${args["to"]} does not exist in the wallet, so registering user`);
+                return;
+            }
+        }
+
         const connectOptions = {
             wallet, identity: username, discovery: { enabled: true, asLocalhost: true }
             // eventHandlerOptions: EventStrategies.NONE
@@ -73,24 +81,29 @@ const invokeTransaction = async (fcn,username,args) => {
                 new_args["PhoneNumber"] = username;
                 new_args["Doc_type"] = "info";
                 console.log(JSON.stringify(new_args));
-                err = await contract.submitTransaction('SmartContract:'+fcn, JSON.stringify(new_args));
+                await contract.submitTransaction('SmartContract:'+fcn, JSON.stringify(new_args));
                 return;
             
             case "BuyService":
                 console.log(`User name is ${username}`)
                 console.log(`Service name is ${args["Service_name"]}`)
                 console.log(`Price is ${args["Price"]}`)
-                err = await contract.submitTransaction('SmartContract:'+fcn,username,args["Service_name"],args["Price"]);
-                console.log(err);
+                await contract.submitTransaction('SmartContract:'+fcn,username,args["Service_name"],args["Price"]);
                 return;
 
             case "AddMoney":
                 console.log(`User name is ${username}`)
                 console.log(`Money is ${args}`)
-                err = await contract.submitTransaction('SmartContract:'+fcn,username,args);
-                console.log(err);
+                await contract.submitTransaction('SmartContract:'+fcn,username,args);
                 return;
-                
+
+            case "SendMoney":
+                console.log(`User name is ${username}`)
+                console.log(`To ${args["to"]}`)
+                console.log(`Money is ${args["amount"]}`)
+                await contract.submitTransaction('SmartContract:'+fcn,username,args["to"],args["amount"]);
+                return;
+
             default:
                 break;
         }
