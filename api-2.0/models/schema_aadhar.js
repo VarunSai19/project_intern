@@ -23,6 +23,11 @@ const dataSchema = new schema({
     {
         type:String,
         required:true
+    },
+    PhoneNumber:
+    {
+        type:String,
+        required:true
     }
 },{timestamps:true});
 

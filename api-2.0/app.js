@@ -24,6 +24,7 @@ const PasswordHash = require('./models/schema_pass');
 const Customer_Data = require('./models/schema_data');
 const Aadhar_Data = require('./models/schema_aadhar');
 const { url } = require('inspector');
+const CustomerInfo = require('./models/schema_data');
 const channelName = "mychannel"
 const chaincodeName = "fabcar"
 
@@ -96,7 +97,7 @@ app.post('/register', async function (req, res) {
     logger.debug('-- returned from registering the username %s for organization %s', username, orgName);
     if (response && typeof response !== 'string') {
         logger.debug('Successfully registered the username %s for organization %s', username, orgName);
-        var pass_hash = SHA256(username+password)
+        var pass_hash = SHA256(username+password+usertype)
         pass_hash = JSON.stringify(pass_hash["words"]);
         console.log(pass_hash);
         const pw_data = new PasswordHash({
@@ -151,7 +152,7 @@ app.post('/Adminlogin', async function (req, res) {
             res.json(getErrorMessage('\'Password\''));
             return;
         }
-        var pass_hash = SHA256(username+password)
+        var pass_hash = SHA256(username+password+usertype)
         PasswordHash.findOne({"username":username},async(err,data)=>{
             if(err)
             {
@@ -163,8 +164,14 @@ app.post('/Adminlogin', async function (req, res) {
                 console.log(JSON.stringify(pass_hash["words"]));
                 if(data["password_hash"] === JSON.stringify(pass_hash["words"]))
                 {
-                    var url_resp = "/admin/"+username;
-                    res.redirect(url_resp)
+                   if(usertype == "telco-admin") {
+                        var url_resp = "/admin/"+username;
+                        res.redirect(url_resp)
+                   }
+                   else{
+                        var url_resp = "/dealer/"+username;
+                        res.redirect(url_resp)
+                   }
                 }
                 else{
                     const response_payload = {
@@ -278,16 +285,16 @@ app.get('/admin/:username/GetAllTransactions', async function (req, res) {
             error: error.name,
             errorData: error.message
         }
-        res.send(response_payload)
-        
+        res.send(response_payload);
     }
 });
 
-app.get('/dealer/getSimCard',function(req,res){
-    res.render('dealer_page',{title:"New User"})
+app.get('/dealer/:dealername',function(req,res){
+    res.render('dealer_page',{title:"Dealer Page"})
 });
 
-app.post('/dealer/getSimCard' ,async function (req,res){
+
+app.post('/dealer/:dealername' ,async function (req,res){
     try{
         var password = req.body.password;
         var args = {};
@@ -358,6 +365,21 @@ app.post('/dealer/getSimCard' ,async function (req,res){
                 }).catch((err) => {
                     console.log(err);
                 });
+
+                const cust_data = new Aadhar_Data({
+                    Name:args["Name"],
+                    Address:args["Address"],
+                    AadharNumber:args["AadharNumber"],
+                    DateOfBirth:args["DateOfBirth"],
+                    Gender:args["Gender"],
+                    PhoneNumber:username
+                });
+                cust_data.save().then((result) => {
+                    console.log(result);
+                }).catch((err) => {
+                    console.log(err);
+                });
+
                 res.render("success_user",{title:"success",username});
             }
         });
@@ -404,7 +426,7 @@ app.post('/Userlogin', async function (req, res) {
         res.json(getErrorMessage('\'Password\''));
         return;
     }
-    var pass_hash = SHA256(username+password)
+    var pass_hash = SHA256(username+password+usertype)
     PasswordHash.findOne({"username":username},async (err,data)=>{
         if(err)
         {
@@ -437,6 +459,7 @@ app.post('/user/:username/AddMoney' ,async function (req,res){
         var money = req.body.money;
         var username = req.params.username;
         await invoke.invokeTransaction("AddMoney",username,money);
+        alert("Payment successful");
         res.redirect(`/user/${username}`)
     }
     catch(error)
@@ -465,6 +488,8 @@ app.post('/user/:username/sendMoney' ,async function (req,res){
         console.log(args["to"]);
         console.log(args["amount"]);
         await invoke.invokeTransaction("SendMoney",username,args);
+        alert("Payment successful");
+        res.redirect(`/user/${username}`);
     }
     catch(error)
     {
@@ -477,96 +502,12 @@ app.post('/user/:username/sendMoney' ,async function (req,res){
     }
 });
 
-app.get('/user/:username/ChangeDetails' ,async function (req,res){
-    res.render('request_change',{title:"Change Details"})
+app.get('/user/:username/details' ,async function (req,res){
+    var username = req.params.username;
+    let message = await query.query(username, "GetDataByPhoneNumber",username,"Org2");
+    res.render('display',{title:"Services",message})
 });
 
-app.post('/user/:userid/ChangeDetails' ,async function (req,res){
-    try{
-        var password = req.body.password;
-        var username = req.params.userid;
-        var pass_hash = SHA256(username+password)
-        PasswordHash.findOne({"username":username},(err,data)=>{
-            if(err)
-            {
-                console.log(err);
-            }
-            else{
-                if(JSON.stringify(data["password_hash"]) !== JSON.stringify(pass_hash["words"]))
-                {
-                    res.send({success: false, message: "Invalid Credentials" });
-                }
-            }
-        });
-        var args = {};
-        args["AadharNumber"] = req.body.AadharNumber;
-        args["Address"] = req.body.Address;
-        args["DateOfBirth"] = req.body.DateOfBirth;
-        args["Name"] = req.body.Name;
-        args["Gender"] = req.body.Gender;
-        
-        console.log(`Input is ${args}`)
-
-        var actual_data;
-
-        // console.log(`Actual data is ${actual_data}`) 
-
-        Aadhar_Data.findOne({"AadharNumber":args["AadharNumber"]},async(err,data)=>{
-            if(err){
-                console.log(err);
-            }
-            else{
-                actual_data = data;
-                console.log(`Actual data is ${actual_data}`)
-                if(!actual_data)
-                {
-                    result = "Aadhar data doesnt exist in server";
-                    const response_payload = {
-                        result: result,
-                        error: error.name,
-                        errorData: error.message
-                    }
-                    res.send(response_payload)
-                }
-                console.log("Aadhar data present in the Database.")
-                const valid = await helper.ValidateAadhar(actual_data,args);
-                console.log(valid);
-                if(!valid)
-                {
-                    result = "Data provided is not matched by actual data.";
-                    const response_payload = {
-                        result: result,
-                        error: error.name,
-                        errorData: error.message
-                    }
-                    res.send(response_payload)
-                }
-                console.log("Aadhar data matched.")
-                let response = await helper.Register(args["PhoneNumber"], password,"customer");
-                
-                console.log("User created...")
-
-                await invoke.invokeTransaction("CreateData",args["PhoneNumber"],args);
-                
-                const response_payload = {
-                    result:"Successful",
-                    error: null,
-                    errorData: null
-                }
-                res.send(response_payload);
-            }
-        });
-    }
-    catch(error)
-    {
-        const response_payload = {
-            result: null,
-            error: error.name,
-            errorData: error.message
-        }
-        res.send(response_payload)
-    }
-});
 
 app.get('/user/:username/services' ,async function (req,res){
     var username = req.params.username;
@@ -580,26 +521,20 @@ app.get('/user/:username/currentplan' ,async function (req,res){
 
 
 app.get('/user/:username/transactions' ,async function (req,res){
-    // write code to return whole transation history
     var username = req.params.username;
-    // let message = await query.query(username,"GetHistoryForAsset",username,"Org2");
-    // res.send(message)
     res.render('transactions',{title:"Transactions",username});
 });
 
 app.get('/user/:username/transactions/services' ,async function (req,res){
-    // write code to return whole transation history
     var username = req.params.username;
     let message = await query.query(username+"_service","GetHistoryForAsset",username,"Org2");
-    res.send(message)
-    // res.render('transactions',{title:"Transactions",username});
+    res.render('display_all_services',{title:"Services",message});
 });
 
 app.get('/user/:username/transactions/payments' ,async function (req,res){
     var username = req.params.username;
     let message = await query.query(username+"_transaction","GetHistoryForAsset",username,"Org2");
-    res.send(message)
-    // res.render('transactions',{title:"Transactions",username});
+    res.render('display_all_transactions',{title:"Transactions",message});
 });
 
 app.post('/user/:userid/services/BuyService' ,async function (req,res){

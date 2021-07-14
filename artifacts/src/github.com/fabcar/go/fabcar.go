@@ -318,7 +318,17 @@ func (s *SmartContract) GetDataByPhoneNumber(ctx contractapi.TransactionContextI
 	if len(ID) == 0 {
 		return nil, fmt.Errorf("Please provide correct contract Id")
 	}
-	// clientID,err_id := s.GetSubmittingClientIdentity(ctx)
+
+	clientID,err := s.GetSubmittingClientIdentity(ctx)
+	if err!= nil {
+		return nil, fmt.Errorf("Failed to read client Identity %s", err.Error())
+	}
+	err := ctx.GetClientIdentity().AssertAttributeValue("usertype", "telco-admin")
+
+	if clientID != ID && err == nil {
+		return nil, fmt.Errorf("Doesnt have permission to access %s", err.Error())		
+	}
+
 	dataAsBytes, err := ctx.GetStub().GetState(ID)
 
 	if err != nil {
@@ -328,6 +338,7 @@ func (s *SmartContract) GetDataByPhoneNumber(ctx contractapi.TransactionContextI
 	if dataAsBytes == nil {
 		return nil, fmt.Errorf("%s does not exist", ID)
 	}
+	
 	data := new(TelcoData)
 	_ = json.Unmarshal(dataAsBytes, data)
 

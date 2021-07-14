@@ -1,89 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-<style>
-body {
-  margin: 0;
-}
-.button {
-  background-color: #7FFFD4;
-  border: none;
-  color: black;
-  padding: 15px 32px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 14px;
-  margin: 2.5% 2%;
-  cursor: pointer;
-}
-ul {
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
-  width: 15%;
-  background-color: #f1f1f1;
-  position: fixed;
-  height: 100%;
-  overflow: auto;
-}
-
-li a {
-  display: block;
-  color: #000;
-  padding: 8px 16px;
-  text-decoration: none;
-}
-
-li a.active {
-  background-color: #7FFFD4;
-  color: black;
-}
-
-li a:hover {
-  background-color: #7FFFD4;
- 
-}
-li a:active a {
-  background-color: #7FFFD4;
-}
-.center {
-  margin: auto;
-  width: 60%;
-  color: black;
-  padding: 1.5%;
-  margin-left: 30%;
-}
-</style>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script>
-$(document).ready(function () {
-    $("#services").hide();
- 
-    $("#one").click(function () {
-        $("#request").show();
-        $("#services").hide();
-        
-    });
-
-    $("#two").click(function () {
-        $("#request").hide();
-        $("#services").show();
-        
-    });
-
-});
-</script>
+<title>BlockChain | Dealer Page</title>
 </head>
 <body>
-
-<ul>
-  <li id="one"><a href="#request">Request for New SIM</a></li>
-  <li id="two"><a href="#services">Services Offered</a></li>
-
-
-</ul>
-<div class="center" id ="request">
   <h2>User Details</h2>
   <form method="POST">
     <label for="name">Name (as per Aadhar):</label><br>
@@ -117,15 +37,7 @@ $(document).ready(function () {
     <label for="proof">Proof Document:</label><br>
     <input type="file" id="proof" name="proof"><br>
     <br>
-    <input type="submit" class="button" value="Submit">
+    <input type="submit" value="Submit">
   </form> 
-</div>
-
-<div class="center" id ="services">
-  <h2>Services offered</h2>
-  
-</div>
-
-
 </body>
 </html>
