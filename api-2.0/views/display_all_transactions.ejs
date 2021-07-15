@@ -6,10 +6,11 @@
         <% for(var person of message) { %>
             <li>
                 <ul>
-                    <li>From : <%= person["From"] %> </li>
-                    <li>To :<%= person["To"] %> </li>
-                    <li>Amount :<%= person["Amount"] %> </li>
-                    <li>Type : <%= person["Type"] %> </li>
+                    <li>From : <%= person["Value"]["From"] %> </li>
+                    <li>To :<%= person["Value"]["To"] %> </li>
+                    <li>Amount :<%= person["Value"]["Amount"] %> </li>
+                    <li>Type : <%= person["Value"]["Type"] %> </li>
+                    <li>Transaction Id : <%= person["TxId"] %> </li>
                     <br><br>
                 </ul>
             </li>

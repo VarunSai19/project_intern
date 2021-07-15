@@ -4,16 +4,7 @@
 <body>
     <ol>
         <% for(var person of message) { %>
-            <li>
-                <ul>
-                    <li>PhoneNumber : <%= person["PhoneNumber"] %> </li>
-                    <li>Name :<%= person["Name"] %> </li>
-                    <li>AadharNumber :<%= person["AadharNumber"] %> </li>
-                    <li>Status : <%= person["Status"] %> </li>
-                    <li>Money: <%= person["Money"] %> </li>
-                    <br><br>
-                </ul>
-            </li>
+            <a href="/admin/<%= username %>/GetCustomerByPhoneNumber/<%= person["PhoneNumber"] %>"><%= person["PhoneNumber"] %></a>
         <% } %>
     </ol>
 </body>

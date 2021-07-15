@@ -204,23 +204,10 @@ app.get('/admin/:username/GetCustomerByPhoneNumber', async function (req, res) {
 
 
 app.post('/admin/:username/GetCustomerByPhoneNumber', async function (req, res) {
-    try {
-        logger.debug('==================== QUERY BY CHAINCODE ==================');
-        
-        let args = req.body.number;
+    try {        
+        let number = req.body.number;
         let username = req.params.username
-        logger.debug('args : ' + args);
-
-        if (!args) {
-            res.json(getErrorMessage('\'args\''));
-            return;
-        }
-
-        console.log('args==========>', args);
-
-        let message = await query.query(args, "GetDataByPhoneNumber",username,"Org1");
-
-        res.render('display',{title:"Details",message});
+        res.redirect(`/admin/${username}/GetCustomerByPhoneNumber/${number}`)
 
     } catch (error) {
         const response_payload = {
@@ -231,6 +218,38 @@ app.post('/admin/:username/GetCustomerByPhoneNumber', async function (req, res) 
         res.send(response_payload)
     }
 });
+
+
+
+
+app.get('/admin/:username/GetCustomerByPhoneNumber/:number', async function (req, res) {
+    let username = req.params.username;
+    let number = req.params.number;
+    res.render('number_queries',{title:"Get Data",username,number});
+});
+
+app.get('/admin/:username/GetCustomerByPhoneNumber/:number/info', async function (req, res) {
+    let username = req.params.username;
+    let number = req.params.number;
+    let message = await query.query(number,"GetDataByPhoneNumber",number,"Org2");
+    
+    res.render('display',{title:"Info",message})
+});
+
+app.get('/admin/:username/GetCustomerByPhoneNumber/:number/services', async function (req, res) {
+    let username = req.params.username;
+    let number = req.params.number;
+    let message = await query.query(number+"_service","GetHistoryForAsset",number,"Org2");
+    res.render('display_all_services',{title:"Service Data",message})
+});
+
+app.get('/admin/:username/GetCustomerByPhoneNumber/:number/transactions', async function (req, res) {
+    let username = req.params.username;
+    let number = req.params.number;
+    let message = await query.query(number+"_transaction","GetHistoryForAsset",number,"Org2");
+    res.render('display_all_transactions',{title:"Transaction Data",message})
+});
+
 
 app.get('/admin/:username/GetAllCustomers', async function (req, res) {
     try {
@@ -239,7 +258,7 @@ app.get('/admin/:username/GetAllCustomers', async function (req, res) {
         let username = req.params.username
         let message = await query.query(null,"QueryAllData",username,"Org1");
 
-        res.render('display_all',{title:"All Details",message});
+        res.render('display_all',{title:"All Details",username,message});
 
     } catch (error) {
         const response_payload = {
@@ -251,43 +270,7 @@ app.get('/admin/:username/GetAllCustomers', async function (req, res) {
     }
 });
 
-app.get('/admin/:username/GetAllServices', async function (req, res) {
-    try {
-        logger.debug('==================== QUERY BY CHAINCODE ==================');
-        
-        let username = req.params.username
-        let message = await query.query(null,"QueryAllServices",username,"Org1");
 
-        res.render('display_all_services',{title:"All Service Details",message});
-
-    } catch (error) {
-        const response_payload = {
-            result: null,
-            error: error.name,
-            errorData: error.message
-        }
-        res.send(response_payload)
-    }
-});
-
-app.get('/admin/:username/GetAllTransactions', async function (req, res) {
-    try {
-        logger.debug('==================== QUERY BY CHAINCODE ==================');
-        
-        let username = req.params.username
-        let message = await query.query(null,"QueryAllTransactions",username,"Org1");
-
-        res.render('display_all_transactions',{title:"All Transaction Details",message});
-
-    } catch (error) {
-        const response_payload = {
-            result: null,
-            error: error.name,
-            errorData: error.message
-        }
-        res.send(response_payload);
-    }
-});
 
 app.get('/dealer/:dealername',function(req,res){
     res.render('dealer_page',{title:"Dealer Page"})
@@ -296,6 +279,7 @@ app.get('/dealer/:dealername',function(req,res){
 
 app.post('/dealer/:dealername' ,async function (req,res){
     try{
+        var dealername = req.params.dealername;
         var password = req.body.password;
         var args = {};
         args["AadharNumber"] = req.body.AadharNumber;
@@ -353,7 +337,7 @@ app.post('/dealer/:dealername' ,async function (req,res){
                 console.log(message);
                 console.log(`message result is : ${message}`)
 
-                var pass_hash = SHA256(username+password)
+                var pass_hash = SHA256(username+password+"customer")
                 pass_hash = JSON.stringify(pass_hash["words"]);
                 console.log(pass_hash);
                 const pw_data = new PasswordHash({
@@ -366,7 +350,7 @@ app.post('/dealer/:dealername' ,async function (req,res){
                     console.log(err);
                 });
 
-                const cust_data = new Aadhar_Data({
+                const cust_data = new Customer_Data({
                     Name:args["Name"],
                     Address:args["Address"],
                     AadharNumber:args["AadharNumber"],
@@ -380,7 +364,7 @@ app.post('/dealer/:dealername' ,async function (req,res){
                     console.log(err);
                 });
 
-                res.render("success_user",{title:"success",username});
+                res.redirect(`\dealer\${dealername}`);
             }
         });
     }
@@ -459,7 +443,6 @@ app.post('/user/:username/AddMoney' ,async function (req,res){
         var money = req.body.money;
         var username = req.params.username;
         await invoke.invokeTransaction("AddMoney",username,money);
-        alert("Payment successful");
         res.redirect(`/user/${username}`)
     }
     catch(error)
@@ -484,11 +467,9 @@ app.post('/user/:username/sendMoney' ,async function (req,res){
         var args = {};
         args["to"] = req.body.to;
         args["amount"] = req.body.money;
-        console.log(from);
         console.log(args["to"]);
         console.log(args["amount"]);
         await invoke.invokeTransaction("SendMoney",username,args);
-        alert("Payment successful");
         res.redirect(`/user/${username}`);
     }
     catch(error)
@@ -546,16 +527,18 @@ app.post('/user/:userid/services/BuyService' ,async function (req,res){
         console.log(req.body.service_name);
         console.log(req.body.price);
         console.log(`Input is ${args}`)
-
-        await invoke.invokeTransaction("BuyService",username,args);
-
-        const response_payload = {
-            result: message,
-            error: null,
-            errorData: null
+        let message = await invoke.invokeTransaction("BuyService",username,args);
+        console.log(message);
+        if(!message){
+            res.redirect(`/user/${username}`)
         }
-        res.send(response_payload);
-
+        else{
+            const response_payload = {
+                result: "The Transaction Failed. Please check the wallet ammount before purchasing the service",
+            }
+            res.send(response_payload)
+        }
+        
     }
     catch(error)
     {

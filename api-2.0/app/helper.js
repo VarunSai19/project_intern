@@ -217,8 +217,6 @@ const Register = async (username,password,usertype) => {
     };
     await wallet.put(username, x509Identity);
     console.log("Username inserted into the wallet")
-    var pass_hash = SHA256(username+password)
-    // console.log(pass_hash)
     console.log("Registration successful")
     console.log(`Successfully registered and enrolled user ${username} and imported it into the wallet`);
 

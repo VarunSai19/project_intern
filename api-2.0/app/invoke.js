@@ -57,6 +57,7 @@ const invokeTransaction = async (fcn,username,args) => {
         let result;
         let err;
         let message;
+        let response;
 
         switch (fcn) {
             case "CreateData":
@@ -82,27 +83,43 @@ const invokeTransaction = async (fcn,username,args) => {
                 new_args["Doc_type"] = "info";
                 console.log(JSON.stringify(new_args));
                 await contract.submitTransaction('SmartContract:'+fcn, JSON.stringify(new_args));
-                return;
+                response = {
+                    message: "Success",
+                    result
+                }
+                return response;
             
             case "BuyService":
                 console.log(`User name is ${username}`)
                 console.log(`Service name is ${args["Service_name"]}`)
                 console.log(`Price is ${args["Price"]}`)
                 await contract.submitTransaction('SmartContract:'+fcn,username,args["Service_name"],args["Price"]);
-                return;
+                response = {
+                    message: "Success",
+                    result
+                }
+                return response;
 
             case "AddMoney":
                 console.log(`User name is ${username}`)
                 console.log(`Money is ${args}`)
                 await contract.submitTransaction('SmartContract:'+fcn,username,args);
-                return;
+                response = {
+                    message: "Success",
+                    result
+                }
+                return response;
 
             case "SendMoney":
                 console.log(`User name is ${username}`)
                 console.log(`To ${args["to"]}`)
                 console.log(`Money is ${args["amount"]}`)
                 await contract.submitTransaction('SmartContract:'+fcn,username,args["to"],args["amount"]);
-                return;
+                response = {
+                    message: "Success",
+                    result
+                }
+                return response;
 
             default:
                 break;
@@ -112,7 +129,7 @@ const invokeTransaction = async (fcn,username,args) => {
 
         // result = JSON.parse(result.toString());
 
-        let response = {
+        response = {
             message: message,
             result
         }

@@ -323,7 +323,7 @@ func (s *SmartContract) GetDataByPhoneNumber(ctx contractapi.TransactionContextI
 	if err!= nil {
 		return nil, fmt.Errorf("Failed to read client Identity %s", err.Error())
 	}
-	err := ctx.GetClientIdentity().AssertAttributeValue("usertype", "telco-admin")
+	err = ctx.GetClientIdentity().AssertAttributeValue("usertype", "telco-admin")
 
 	if clientID != ID && err == nil {
 		return nil, fmt.Errorf("Doesnt have permission to access %s", err.Error())		
@@ -338,12 +338,44 @@ func (s *SmartContract) GetDataByPhoneNumber(ctx contractapi.TransactionContextI
 	if dataAsBytes == nil {
 		return nil, fmt.Errorf("%s does not exist", ID)
 	}
-	
+
 	data := new(TelcoData)
 	_ = json.Unmarshal(dataAsBytes, data)
 
 	return data, nil
 }
+
+func (s *SmartContract) GetServiceDataByPhoneNumber(ctx contractapi.TransactionContextInterface, ID string) (*ServiceData, error) {
+	if len(ID) == 0 {
+		return nil, fmt.Errorf("Please provide correct contract Id")
+	}
+
+	clientID,err := s.GetSubmittingClientIdentity(ctx)
+	if err!= nil {
+		return nil, fmt.Errorf("Failed to read client Identity %s", err.Error())
+	}
+	err = ctx.GetClientIdentity().AssertAttributeValue("usertype", "telco-admin")
+
+	if clientID != ID && err == nil {
+		return nil, fmt.Errorf("Doesnt have permission to access %s", err.Error())		
+	}
+
+	dataAsBytes, err := ctx.GetStub().GetState(ID)
+
+	if err != nil {
+		return nil, fmt.Errorf("Failed to read from world state. %s", err.Error())
+	}
+
+	if dataAsBytes == nil {
+		return nil, fmt.Errorf("%s does not exist", ID)
+	}
+
+	data := new(ServiceData)
+	_ = json.Unmarshal(dataAsBytes, data)
+
+	return data, nil
+}
+
 
 func (s *SmartContract) GetHistoryForAsset(ctx contractapi.TransactionContextInterface, ID string) (string, error) {
 

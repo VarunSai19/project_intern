@@ -6,9 +6,10 @@
         <% for(var service of message) { %>
             <li>
                 <ul>
-                    <li>PhoneNumber : <%= service["PhoneNumber"] %> </li>
-                    <li>Service Name :<%= service["ServiceName"] %> </li>
-                    <li>Service Price :<%= service["ServicePrice"] %> </li>
+                    <li>PhoneNumber : <%= service["Value"]["PhoneNumber"] %> </li>
+                    <li>Service Name :<%= service["Value"]["ServiceName"] %> </li>
+                    <li>Service Price :<%= service["Value"]["ServicePrice"] %> </li>
+                    <li>Transaction Id :<%= service["TxId"] %> </li>
                     <br><br>
                 </ul>
             </li>

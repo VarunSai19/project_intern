@@ -38,6 +38,7 @@ const query = async (args, fcn, username, org_name) => {
         switch (fcn) {
             case "GetHistoryForAsset":
             case "GetDataByPhoneNumber":
+            case "GetServiceDataByPhoneNumber":
             case "GetCarById": 
                 console.log("=============")
                 result = await contract.evaluateTransaction('SmartContract:'+fcn, args);
