@@ -252,9 +252,7 @@ app.get('/admin/:username/GetCustomerByPhoneNumber/:number/transactions', async 
 
 
 app.get('/admin/:username/GetAllCustomers', async function (req, res) {
-    try {
-        logger.debug('==================== QUERY BY CHAINCODE ==================');
-        
+    try {        
         let username = req.params.username
         let message = await query.query(null,"QueryAllData",username,"Org1");
 
@@ -364,7 +362,7 @@ app.post('/dealer/:dealername' ,async function (req,res){
                     console.log(err);
                 });
 
-                res.redirect(`\dealer\${dealername}`);
+                res.redirect(`/dealer/${dealername}`);
             }
         });
     }
@@ -529,7 +527,7 @@ app.post('/user/:userid/services/BuyService' ,async function (req,res){
         console.log(`Input is ${args}`)
         let message = await invoke.invokeTransaction("BuyService",username,args);
         console.log(message);
-        if(!message){
+        if(message){
             res.redirect(`/user/${username}`)
         }
         else{

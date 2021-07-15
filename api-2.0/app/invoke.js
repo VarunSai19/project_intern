@@ -85,7 +85,6 @@ const invokeTransaction = async (fcn,username,args) => {
                 await contract.submitTransaction('SmartContract:'+fcn, JSON.stringify(new_args));
                 response = {
                     message: "Success",
-                    result
                 }
                 return response;
             
@@ -96,7 +95,6 @@ const invokeTransaction = async (fcn,username,args) => {
                 await contract.submitTransaction('SmartContract:'+fcn,username,args["Service_name"],args["Price"]);
                 response = {
                     message: "Success",
-                    result
                 }
                 return response;
 
@@ -106,7 +104,6 @@ const invokeTransaction = async (fcn,username,args) => {
                 await contract.submitTransaction('SmartContract:'+fcn,username,args);
                 response = {
                     message: "Success",
-                    result
                 }
                 return response;
 
@@ -117,7 +114,6 @@ const invokeTransaction = async (fcn,username,args) => {
                 await contract.submitTransaction('SmartContract:'+fcn,username,args["to"],args["amount"]);
                 response = {
                     message: "Success",
-                    result
                 }
                 return response;
 

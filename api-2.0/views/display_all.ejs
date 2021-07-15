@@ -4,7 +4,10 @@
 <body>
     <ol>
         <% for(var person of message) { %>
-            <a href="/admin/<%= username %>/GetCustomerByPhoneNumber/<%= person["PhoneNumber"] %>"><%= person["PhoneNumber"] %></a>
+            <li>
+                <a href="/admin/<%= username %>/GetCustomerByPhoneNumber/<%= person["PhoneNumber"] %>"><%= person["PhoneNumber"] %></a>
+                <br>
+            </li>
         <% } %>
     </ol>
 </body>
