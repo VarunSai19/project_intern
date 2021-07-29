@@ -9,7 +9,6 @@ const util = require('util')
 const helper = require('./helper');
 const query = require('./query');
 
-const { blockListener, contractListener } = require('./Listeners');
 const channelName = "mychannel"
 const chaincodeName = "fabcar"
 var org_name 
@@ -40,7 +39,6 @@ const invokeTransaction = async (fcn,username,args) => {
 
         const connectOptions = {
             wallet, identity: username, discovery: { enabled: true, asLocalhost: true }
-            // eventHandlerOptions: EventStrategies.NONE
         }
 
         const gateway = new Gateway();
@@ -49,11 +47,6 @@ const invokeTransaction = async (fcn,username,args) => {
         const network = await gateway.getNetwork(channelName);
         const contract = network.getContract(chaincodeName);
 
-        // await contract.addContractListener(contractListener);
-        // await network.addBlockListener(blockListener);
-
-
-        // Multiple smartcontract in one chaincode
         let result;
         let err;
         let message;

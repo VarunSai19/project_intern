@@ -25,7 +25,6 @@ const query = async (args, fcn, username, org_name) => {
 
         const connectOptions = {
             wallet, identity: username, discovery: { enabled: true, asLocalhost: true }
-            // eventHandlerOptions: EventStrategies.NONE
         }
 
         const gateway = new Gateway();
@@ -39,7 +38,6 @@ const query = async (args, fcn, username, org_name) => {
             case "GetHistoryForAsset":
             case "GetDataByPhoneNumber":
             case "GetServiceDataByPhoneNumber":
-            case "GetCarById": 
                 console.log("=============")
                 result = await contract.evaluateTransaction('SmartContract:'+fcn, args);
                 break;
