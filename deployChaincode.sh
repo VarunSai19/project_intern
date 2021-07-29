@@ -224,32 +224,16 @@ chaincodeInvoke() {
         -C $CHANNEL_NAME -n ${CC_NAME}  \
         --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA \
         --peerAddresses localhost:9051 --tlsRootCertFiles $PEER0_ORG2_CA   \
-        -c '{"function": "createCar","Args":["{\"id\":\"1\",\"make\":\"Audi\",\"addedAt\":1600138309939,\"model\":\"R8\", \"color\":\"red\",\"owner\":\"pavan\"}"]}'
+        -c '{"function": "CreateData","Args":["{\"AadharNumber\":\"test_aadhar\",\"Name\":\"test_name\",\"PhoneNumber\":\"test_number\", \"Status\":\"test_status\",\"Money\":0}"]}'
 
 }
 
 # chaincodeInvoke
 
-chaincodeInvokeDeleteAsset() {
-    setGlobalsForPeer0Org1
-
-    # Create Car
-    peer chaincode invoke -o localhost:7050 \
-        --ordererTLSHostnameOverride orderer.example.com \
-        --tls $CORE_PEER_TLS_ENABLED \
-        --cafile $ORDERER_CA \
-        -C $CHANNEL_NAME -n ${CC_NAME}  \
-        --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA \
-        --peerAddresses localhost:9051 --tlsRootCertFiles $PEER0_ORG2_CA   \
-        -c '{"function": "DeleteCarById","Args":["2"]}'
-
-}
-
-# chaincodeInvokeDeleteAsset
 
 chaincodeQuery() {
     setGlobalsForPeer0Org1
-    peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"function": "GetCarById","Args":["1"]}'
+    peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"function": "GetDataByPhoneNumber","Args":["test_number"]}'
 }
 
 # chaincodeQuery
