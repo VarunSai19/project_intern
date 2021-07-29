@@ -520,6 +520,7 @@ app.post('/user/:userid/services/BuyService' ,async function (req,res){
         var args = {};
         args["Service_name"] = req.body.service_name;
         args["Price"] = req.body.price;
+        // args["days"] = parseInt(req.body.validity);
         console.log(req.body.service_name);
         console.log(req.body.price);
         console.log(`Input is ${args}`)
@@ -530,7 +531,7 @@ app.post('/user/:userid/services/BuyService' ,async function (req,res){
         }
         else{
             const response_payload = {
-                result: "The Transaction Failed. Please check the wallet ammount before purchasing the service",
+                result: "The Transaction Failed.",
             }
             res.send(response_payload)
         }

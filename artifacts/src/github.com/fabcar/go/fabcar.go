@@ -22,15 +22,16 @@ type TelcoData struct{
 	Name   string `json:"Name"`
 	PhoneNumber  string `json:"PhoneNumber"`
 	Status   string `json:"Status"`
-	Money int64 `json:"Money"`
+	Money float64 `json:"Money"`
 	Doc_type string `json:"Doc_type"`
 }
 
 type ServiceData struct{
 	PhoneNumber string `json:"PhoneNumber"`
 	ServiceName   string `json:"ServiceName"`
-	ServicePrice int64 `json:"ServicePrice"`
+	ServicePrice float64 `json:"ServicePrice"`
 	UserName  string `json:"UserName"`
+	// ExpiryDate time.Time `json:"ExpiryDate"`
 	Doc_type string `json:"Doc_type"`
 }
 
@@ -38,27 +39,11 @@ type TransactionData struct{
 	UserName  string `json:"UserName"`
 	From string `json:"From"`
 	To   string `json:"To"`
-	Amount  int64 `json:"Amount"`
+	Amount  float64 `json:"Amount"`
 	Type string `json:"Type"`
 	Doc_type string `json:"Doc_type"`
 }
 
-type AadharData struct {
-	AadharNumber   string `json:"AadharNumber"`
-	Address    string `json:"Address"`
-	DateOfBirth   string `json:"DateOfBirth"`
-	Name   string `json:"Name"`
-	Gender   string `json:"Gender"`
-}
-
-type DrivingLicence struct {
-	LicenceNumber  string `json:"LicenceNumber"`
-	Address    string `json:"Address"`
-	DateOfBirth   string `json:"DateOfBirth"`
-	Name   string `json:"Name"`
-	Gender   string `json:"Gender"`
-	LicenceValidity   string `json:"LicenceValidity"`
-}
 
 func (s *SmartContract) CreateData(ctx contractapi.TransactionContextInterface, Data string) (string, error) {
 	if len(Data) == 0 {
@@ -141,9 +126,6 @@ func (s *SmartContract) AddMoney(ctx contractapi.TransactionContextInterface, Id
 	if err != nil {
 		return fmt.Errorf("Failed while marshling Data. %s", err.Error())
 	}
-
-	// ctx.GetStub().SetEvent("CreateAsset", dataAsBytes)
-
 	return ctx.GetStub().PutState(data.UserName, transAsBytes)
 }
 
@@ -232,13 +214,10 @@ func (s *SmartContract) SendMoney(ctx contractapi.TransactionContextInterface, I
 	if err != nil {
 		return fmt.Errorf("Failed while marshling Data. %s", err.Error())
 	}
-
-	// ctx.GetStub().SetEvent("CreateAsset", dataAsBytes)
-
 	return ctx.GetStub().PutState(data2.UserName, transAsBytes2)
 }
 
-func (s *SmartContract) BuyService(ctx contractapi.TransactionContextInterface, username string,servicename string,price string) error {
+func (s *SmartContract) BuyService(ctx contractapi.TransactionContextInterface, username string,servicename string,price string,days int64) error {
 	if len(username) == 0 {
 		return fmt.Errorf("Please pass the correct data.")
 	}
