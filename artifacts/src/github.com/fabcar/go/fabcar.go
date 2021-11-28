@@ -22,16 +22,15 @@ type TelcoData struct{
 	Name   string `json:"Name"`
 	PhoneNumber  string `json:"PhoneNumber"`
 	Status   string `json:"Status"`
-	Money float64 `json:"Money"`
+	Money int64 `json:"Money"`
 	Doc_type string `json:"Doc_type"`
 }
 
 type ServiceData struct{
 	PhoneNumber string `json:"PhoneNumber"`
 	ServiceName   string `json:"ServiceName"`
-	ServicePrice float64 `json:"ServicePrice"`
+	ServicePrice int64 `json:"ServicePrice"`
 	UserName  string `json:"UserName"`
-	// ExpiryDate time.Time `json:"ExpiryDate"`
 	Doc_type string `json:"Doc_type"`
 }
 
@@ -39,7 +38,7 @@ type TransactionData struct{
 	UserName  string `json:"UserName"`
 	From string `json:"From"`
 	To   string `json:"To"`
-	Amount  float64 `json:"Amount"`
+	Amount  int64 `json:"Amount"`
 	Type string `json:"Type"`
 	Doc_type string `json:"Doc_type"`
 }
@@ -126,6 +125,9 @@ func (s *SmartContract) AddMoney(ctx contractapi.TransactionContextInterface, Id
 	if err != nil {
 		return fmt.Errorf("Failed while marshling Data. %s", err.Error())
 	}
+
+	// ctx.GetStub().SetEvent("CreateAsset", dataAsBytes)
+
 	return ctx.GetStub().PutState(data.UserName, transAsBytes)
 }
 
@@ -214,10 +216,13 @@ func (s *SmartContract) SendMoney(ctx contractapi.TransactionContextInterface, I
 	if err != nil {
 		return fmt.Errorf("Failed while marshling Data. %s", err.Error())
 	}
+
+	// ctx.GetStub().SetEvent("CreateAsset", dataAsBytes)
+
 	return ctx.GetStub().PutState(data2.UserName, transAsBytes2)
 }
 
-func (s *SmartContract) BuyService(ctx contractapi.TransactionContextInterface, username string,servicename string,price string,days int64) error {
+func (s *SmartContract) BuyService(ctx contractapi.TransactionContextInterface, username string,servicename string,price string) error {
 	if len(username) == 0 {
 		return fmt.Errorf("Please pass the correct data.")
 	}

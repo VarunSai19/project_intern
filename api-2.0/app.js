@@ -8,7 +8,7 @@ var SHA256 = require("crypto-js/sha256");
 const mongoose = require('mongoose')
 const express = require('express')
 const app = express();
-const dbURI = 'mongodb+srv://varun:varun1234@cluster0.6xvfh.mongodb.net/Project?retryWrites=true&w=majority'
+const dbURI = 'mongodb+srv://varun:varun1234@telco-project.rf8w0.mongodb.net/Project?retryWrites=true&w=majority'
 
 const cors = require('cors');
 const constants = require('./config/constants.json')
@@ -134,7 +134,7 @@ app.post('/Adminlogin', async function (req, res) {
                 success: false,
                 message: username + ' was not enrolled',
             };
-            return response
+            res.send(response)
         }
         var password = req.body.password;
         var usertype = req.body.usertype;
@@ -197,7 +197,7 @@ app.get('/admin/:username',async function(req,res){
 });
 
 app.get('/admin/:username/GetCustomerByPhoneNumber', async function (req, res) {
-    res.render('GetCustomerByNumber',{title:"Get Data"})
+    res.render('GetCustomerByNumber',{title:"Customer Data"})
 });
 
 
@@ -294,75 +294,43 @@ app.post('/dealer/:dealername' ,async function (req,res){
         console.log(req.body.Gender);
 
         var actual_data;
-        Aadhar_Data.findOne({"AadharNumber":args["AadharNumber"]},async (err,data)=>{
-            if(err){
-                console.log(err);
-            }
-            else{
-                actual_data = data;
-                console.log(`Actual data is ${actual_data}`)
-                if(!actual_data)
-                {
-                    result = "Aadhar data doesnt exist in server";
-                    const response_payload = {
-                        result: result,
-                        error: error.name,
-                        errorData: error.message
-                    }
-                    res.send(response_payload)
-                }
-                console.log("Aadhar data present in the Database.")
-                const valid = await helper.ValidateAadhar(actual_data,args);
-                console.log(valid);
-                if(!valid)
-                {
-                    result = "Data provided is not matched by actual data.";
-                    const response_payload = {
-                        result: result,
-                        error: error.name,
-                        errorData: error.message
-                    }
-                    res.send(response_payload)
-                }
-                console.log("Aadhar data matched.")
-                let response = await helper.Register(args["PhoneNumber"], password,"customer");
-                
-                console.log("User created...")
+            
+        let response = await helper.Register(args["PhoneNumber"], password,"customer");
+        
+        console.log("User created...")
 
-                let message = await invoke.invokeTransaction("CreateData",args["PhoneNumber"],args);
-                console.log(message);
-                console.log(`message result is : ${message}`)
+        let message = await invoke.invokeTransaction("CreateData",args["PhoneNumber"],args);
+        console.log(message);
+        console.log(`message result is : ${message}`)
 
-                var pass_hash = SHA256(username+password+"customer")
-                pass_hash = JSON.stringify(pass_hash["words"]);
-                console.log(pass_hash);
-                const pw_data = new PasswordHash({
-                    username:username,
-                    password_hash:pass_hash
-                });
-                pw_data.save().then((result) => {
-                    console.log(result);
-                }).catch((err) => {
-                    console.log(err);
-                });
-
-                const cust_data = new Customer_Data({
-                    Name:args["Name"],
-                    Address:args["Address"],
-                    AadharNumber:args["AadharNumber"],
-                    DateOfBirth:args["DateOfBirth"],
-                    Gender:args["Gender"],
-                    PhoneNumber:username
-                });
-                cust_data.save().then((result) => {
-                    console.log(result);
-                }).catch((err) => {
-                    console.log(err);
-                });
-
-                res.redirect(`/dealer/${dealername}`);
-            }
+        var pass_hash = SHA256(username+password+"customer")
+        pass_hash = JSON.stringify(pass_hash["words"]);
+        console.log(pass_hash);
+        const pw_data = new PasswordHash({
+            username:username,
+            password_hash:pass_hash
         });
+        pw_data.save().then((result) => {
+            console.log(result);
+        }).catch((err) => {
+            console.log(err);
+        });
+
+        const cust_data = new Customer_Data({
+            Name:args["Name"],
+            Address:args["Address"],
+            AadharNumber:args["AadharNumber"],
+            DateOfBirth:args["DateOfBirth"],
+            Gender:args["Gender"],
+            PhoneNumber:username
+        });
+        cust_data.save().then((result) => {
+            console.log(result);
+        }).catch((err) => {
+            console.log(err);
+        });
+
+        res.redirect(`/dealer/${dealername}`);
     }
     catch(error)
     {
