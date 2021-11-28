@@ -8,7 +8,7 @@ var SHA256 = require("crypto-js/sha256");
 const mongoose = require('mongoose')
 const express = require('express')
 const app = express();
-const dbURI = 'mongodb+srv://varun:varun1234@telco-project.rf8w0.mongodb.net/Project?retryWrites=true&w=majority'
+const dbURI = 'mongodb+srv://varun:varun1234@cluster0.6xvfh.mongodb.net/Project?retryWrites=true&w=majority'
 
 const cors = require('cors');
 const constants = require('./config/constants.json')
@@ -205,6 +205,17 @@ app.post('/admin/:username/GetCustomerByPhoneNumber', async function (req, res) 
     try {        
         let number = req.body.number;
         let username = req.params.username
+        const user_present = await helper.isUserRegistered(number,"Org2")
+        console.log(user_present);
+        if(!user_present) 
+        {
+            console.log(`An identity for the user ${username} not exists`);
+            var response = {
+                success: false,
+                message: username + ' was not enrolled',
+            };
+            res.send(response)
+        }
         res.redirect(`/admin/${username}/GetCustomerByPhoneNumber/${number}`)
 
     } catch (error) {
@@ -273,7 +284,7 @@ app.get('/dealer/:dealername',function(req,res){
 });
 
 
-app.post('/dealer/:dealername' ,async function (req,res){
+app.post('/dealer/:dealername/AddCustomer' ,async function (req,res){
     try{
         var dealername = req.params.dealername;
         var password = req.body.password;
